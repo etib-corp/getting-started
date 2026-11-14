@@ -1,0 +1,77 @@
+{
+    "version": 6,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 28,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Debug",
+            "description": "Debug build with tests; libraries fetched at their pinned revisions",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "description": "Optimized build without tests",
+            "binaryDir": "${sourceDir}/build-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "OFF"
+            }
+        },
+        {
+            "name": "siblings",
+            "displayName": "Debug, local libraries",
+            "description": "Debug build against evan, guillaume and mais checked out next to this repository",
+            "inherits": "default",
+            "binaryDir": "${sourceDir}/build-siblings",
+            "cacheVariables": {
+                "FETCHCONTENT_SOURCE_DIR_EVAN": "${sourceDir}/../evan",
+                "FETCHCONTENT_SOURCE_DIR_GUILLAUME": "${sourceDir}/../guillaume",
+                "FETCHCONTENT_SOURCE_DIR_MAIS": "${sourceDir}/../mais"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "configuration": "Debug"
+        },
+        {
+            "name": "release",
+            "configurePreset": "release",
+            "configuration": "Release"
+        },
+        {
+            "name": "siblings",
+            "configurePreset": "siblings",
+            "configuration": "Debug"
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "default",
+            "configurePreset": "default",
+            "output": {
+                "outputOnFailure": true
+            },
+            "configuration": "Debug"
+        },
+        {
+            "name": "siblings",
+            "configurePreset": "siblings",
+            "output": {
+                "outputOnFailure": true
+            },
+            "configuration": "Debug"
+        }
+    ]
+}

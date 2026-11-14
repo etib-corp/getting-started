@@ -1,0 +1,64 @@
+name: Build CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+env:
+  LUNARG_VULKAN_SDK_VERSION: 1.4.304.1
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            runner: ubuntu-latest
+          - name: macOS
+            runner: macos-latest
+          - name: Windows
+            runner: windows-latest
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Install Ubuntu dependencies
+        if: matrix.runner == 'ubuntu-latest'
+        run: bash tools/install_ubuntu_dependencies.sh
+
+      # mais embeds Python: the interpreter and its development files must
+      # come from the same installation.
+      - name: Setup Python
+        id: python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup the Vulkan SDK
+        uses: humbletim/setup-vulkan-sdk@v1.2.1
+        with:
+          vulkan-query-version: ${{ env.LUNARG_VULKAN_SDK_VERSION }}
+          vulkan-components: Vulkan-Headers, Vulkan-Loader
+          vulkan-use-cache: true
+
+      # The libraries are fetched at the revisions pinned in
+      # cmake/Dependencies.cmake.
+      - name: Configure CMake
+        run: >
+          cmake --preset default
+          -DPython_EXECUTABLE="${{ steps.python.outputs.python-path }}"
+          -DAPP_DEV_MODE=ON
+
+      - name: Build
+        run: cmake --build --preset default --parallel
+
+      # Only the tests that need no window run here: the runners have no
+      # display and no Vulkan driver.
+      - name: Run tests
+        run: ctest --preset default

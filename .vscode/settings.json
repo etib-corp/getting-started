@@ -1,0 +1,16 @@
+{
+    "copyrightInserter.license": "mit",
+    "copyrightInserter.holder": "ETIB Corporation",
+    "cmake.useCMakePresets": "always",
+    "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json",
+    "editor.formatOnSave": true,
+    "[cpp]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": false,
+        "editor.defaultFormatter": "ms-vscode.cpptools"
+    },
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.insertSpaces": true
+    }
+}

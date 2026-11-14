@@ -1,0 +1,20 @@
+# CMake build directories
+/build*/
+
+# Compile database copied or linked at the root for editors
+/compile_commands.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Local storage database created by guillaume at run time
+.guillaume-local-storage.db
+
+# Editors and OS
+.DS_Store
+.idea/
+
+# Claude Code local files
+.claude/settings.local.json
+.claude/worktrees/
