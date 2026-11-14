@@ -21,6 +21,9 @@ Report in this form, and nothing else:
 - **Strict build** (`APP_DEV_MODE=ON`) and **formatting**: passed, failed with
   the first problem, or skipped with the reason.
 - **Not verified**: what these steps cannot show, such as clicks.
+- **To report**: each problem found that is not known noise, with the
+  repository that causes it, so the caller can file it with the
+  `report-issue` skill. You do not file issues yourself.
 
 Leave out the known noise listed in the skill. Never paste more than twenty
 lines of a log.

@@ -35,3 +35,7 @@ Answer with:
 
 Copy; do not reconstruct from memory. If the thing asked for does not exist at
 the pinned revision, say so and name the closest thing that does.
+
+If you notice a bug or a wrong comment in a library while reading, add a
+last line "To report:" with the repository, `file:line` and one sentence.
+The caller files it with the `report-issue` skill.

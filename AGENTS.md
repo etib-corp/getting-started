@@ -59,6 +59,25 @@ without a person closing the window.
 - When a binding changes, update `tests/ScriptingTest.cpp` and
   `tests/scripts/fixture.py`.
 
+## Reporting problems
+
+When you find a bug or anything else worth fixing - a build or documentation
+problem, a missing feature, a mismatch between two libraries - create a GitHub
+issue on the repository that causes it: `etib-corp/evan`, `etib-corp/guillaume`,
+`etib-corp/mais`, `etib-corp/utility`, or `etib-corp/getting-started` for this
+application.
+
+- Do it even when you worked around the problem and even when it is unrelated
+  to the task. Do not ask first; give the issue link in your answer.
+- File it where the code has to change, not where the symptom shows. Do not
+  patch a library from this repository.
+- Search for an existing issue first, and keep private data (home directory
+  paths, tokens, e-mail addresses) out of the text: the repositories are
+  public.
+
+The `report-issue` skill has the steps, the title and label conventions and
+the issue body.
+
 ## Agent tooling
 
 `AGENTS.md` is the single source of instructions. Skills and subagents live
@@ -83,6 +102,7 @@ with `git config core.symlinks true` so the links are created.
 | `build-ui` | Add widgets, scenes and scene transitions. |
 | `python-binding` | Expose values, settings, commands or hooks to Python. |
 | `bump-libraries` | Move evan, guillaume, mais or utility to another revision. |
+| `report-issue` | File an issue on the repository that causes a problem. |
 
 | Subagent | Use it to |
 | --- | --- |
