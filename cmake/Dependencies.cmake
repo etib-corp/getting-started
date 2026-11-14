@@ -61,6 +61,14 @@ else()
     set(APP_ENABLE_SCRIPTING ON)
 endif()
 
+# Workaround for https://github.com/etib-corp/evan/issues/183 and
+# https://github.com/etib-corp/utility/issues/131: both libraries force the
+# release MSVC runtime in every configuration. Use the same one everywhere, or
+# a Debug build fails to link (LNK2038). Remove once both issues are closed.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+endif()
+
 # The libraries are consumed as libraries only: their tests, examples,
 # benchmarks and documentation are built and run in their own repositories.
 set(APP_BUILD_TESTING ${BUILD_TESTING})
