@@ -27,7 +27,7 @@ The revisions are the four `APP_*_REVISION` variables at the top of
    windowed run: a shader or font mismatch only shows at run time.
 
    ```sh
-   cmake --preset default && cmake --build --preset default --parallel
+   cmake --preset default && cmake --build --preset default --parallel 8
    ```
 
 ## Things that move together

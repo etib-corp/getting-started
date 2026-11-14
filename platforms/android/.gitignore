@@ -9,3 +9,5 @@ local.properties
 /captures
 .externalNativeBuild
 .cxx
+# Written by Android Studio for the machine's JDK
+/gradle/gradle-daemon-jvm.properties

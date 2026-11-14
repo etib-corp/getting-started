@@ -23,7 +23,7 @@ installed or exported.
 
 ```bash
 cmake --preset default
-cmake --build --preset default --parallel
+cmake --build --preset default --parallel 8
 ctest --preset default
 cmake --build --preset default --target run   # opens a window
 ```

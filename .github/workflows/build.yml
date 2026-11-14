@@ -55,8 +55,10 @@ jobs:
           -DPython_EXECUTABLE="${{ steps.python.outputs.python-path }}"
           -DAPP_DEV_MODE=ON
 
+      # A job count is required: with Makefiles, a bare --parallel starts
+      # every compilation at once and the runner runs out of memory.
       - name: Build
-        run: cmake --build --preset default --parallel
+        run: cmake --build --preset default --parallel 4
 
       # Only the tests that need no window run here: the runners have no
       # display and no Vulkan driver.

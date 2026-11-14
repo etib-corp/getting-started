@@ -27,13 +27,14 @@ own.
 
 ```sh
 cmake --preset default
-cmake --build --preset default --parallel
+cmake --build --preset default --parallel 8
 cmake --build --preset default --target run
 ```
 
 The first configure fetches evan, guillaume, maïs and their dependencies, and
 the first build compiles them: allow a few minutes. Later builds only compile
-what you change.
+what you change. Always give `--parallel` a number: with Makefiles, a bare
+`--parallel` starts every compilation at once.
 
 The executable is `build/bin/getting_started`. It can be started from any
 directory.
@@ -150,7 +151,7 @@ With evan, guillaume and maïs checked out next to this repository:
 
 ```sh
 cmake --preset siblings
-cmake --build --preset siblings --parallel
+cmake --build --preset siblings --parallel 8
 cmake --build --preset siblings --target run
 ```
 

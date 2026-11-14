@@ -11,7 +11,7 @@ Run the steps in order and stop at the first failure.
 
 ```sh
 cmake --preset default                       # only when build/ is missing or CMake files changed
-cmake --build --preset default --parallel 2>&1 | grep -E "error|Error [0-9]|Built target getting_started"
+cmake --build --preset default --parallel 8 2>&1 | grep -E "error|Error [0-9]|Built target getting_started"
 ```
 
 The first configure downloads the libraries and the first build compiles them
@@ -61,7 +61,7 @@ own widget gallery prints them too):
 ## 4. Before handing back
 
 ```sh
-cmake --preset default -DAPP_DEV_MODE=ON && cmake --build --preset default --parallel   # what CI builds
+cmake --preset default -DAPP_DEV_MODE=ON && cmake --build --preset default --parallel 8   # what CI builds
 ./tools/run-clang-format.sh        # needs clang-format 21.1.8
 ```
 

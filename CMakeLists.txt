@@ -73,6 +73,11 @@ target_compile_definitions(${APP_NAME}
         APP_VERSION="${PROJECT_VERSION}"
 )
 
+# MSVC reports std::getenv as unsafe, which APP_DEV_MODE turns into an error.
+if(MSVC)
+    target_compile_definitions(${APP_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 target_link_libraries(${APP_NAME}
     PRIVATE
         ${APP_NAME}_core
