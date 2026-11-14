@@ -1,6 +1,6 @@
 ---
 name: verify-app
-description: Build the application, run its tests and run it for a fixed number of frames to confirm a change works. Use after any change to src/, scripts/, cmake/ or CMakeLists.txt, and whenever asked to build, run, test or check the app.
+description: Build the desktop application, run its tests and run it for a fixed number of frames to confirm a change works. Use after any change to src/, platforms/desktop/, scripts/, cmake/ or CMakeLists.txt, and whenever asked to build, run, test or check the app.
 ---
 
 # Verify the application
@@ -66,6 +66,10 @@ cmake --preset default -DAPP_DEV_MODE=ON && cmake --build --preset default --par
 ```
 
 Set `APP_DEV_MODE` back to `OFF` afterwards if it was off before.
+
+A change under `src/` or `cmake/` also affects the Android build, which this
+skill does not build: follow the `android-headset` skill, or say that the
+Android build was not checked.
 
 Report what ran and what was skipped. A click or another interaction cannot be
 checked this way: say that it was not exercised.

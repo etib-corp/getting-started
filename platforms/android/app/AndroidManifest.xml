@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Head tracking marks the application as a VR one. -->
+    <uses-feature
+        android:name="android.hardware.vr.headtracking"
+        android:required="true" />
+
+    <!--
+        The application is fully native (android.app.NativeActivity): there is
+        no Java or Kotlin code.
+    -->
+    <application
+        android:allowBackup="false"
+        android:hasCode="false"
+        android:label="Getting started"
+        android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen">
+
+        <activity
+            android:name="android.app.NativeActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="landscape"
+            android:configChanges="screenSize|screenLayout|orientation|keyboardHidden|keyboard|navigation|uiMode">
+
+            <!-- Name of the shared library built by cpp/CMakeLists.txt. -->
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="getting_started_android" />
+
+            <!-- Keep rendering when a system overlay takes the focus. -->
+            <meta-data
+                android:name="com.oculus.vr.focusaware"
+                android:value="true" />
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <!-- Listed in the Meta Horizon library as an immersive app. -->
+                <category android:name="com.oculus.intent.category.VR" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+    </application>
+</manifest>

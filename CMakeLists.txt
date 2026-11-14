@@ -33,7 +33,11 @@ option(APP_ENABLE_GPU_TESTS
 
 include(cmake/Dependencies.cmake)
 
-# 03. Scripting adapter
+# 03. Shared application code (scenes, context, frame helpers)
+
+add_subdirectory(src)
+
+# 04. Scripting adapter
 #
 # The only code that includes pybind11. It is a library of its own so the tests
 # can exercise the Python bindings without opening a window.
@@ -54,17 +58,13 @@ target_link_libraries(${APP_NAME}_scripting
         pybind11::embed
 )
 
-# 04. Application
+# 05. Desktop application
+#
+# The Android application is a separate Gradle project that reuses src/ and
+# cmake/Dependencies.cmake: see platforms/android.
 
 add_executable(${APP_NAME}
-    src/main.cpp
-    src/AppContext.cpp
-    src/scenes/HomeScene.cpp
-)
-
-target_include_directories(${APP_NAME}
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    platforms/desktop/main.cpp
 )
 
 target_compile_definitions(${APP_NAME}
@@ -75,8 +75,8 @@ target_compile_definitions(${APP_NAME}
 
 target_link_libraries(${APP_NAME}
     PRIVATE
+        ${APP_NAME}_core
         ${APP_NAME}_scripting
-        guillaume
         evan
 )
 
@@ -99,11 +99,11 @@ if(APP_DEV_MODE)
     endforeach()
 endif()
 
-# 05. Runtime directory (assets and scripts next to the executable)
+# 06. Runtime directory (assets and scripts next to the executable)
 
 include(cmake/Runtime.cmake)
 
-# 06. Tests
+# 07. Tests
 
 if(BUILD_TESTING)
     add_subdirectory(tests)

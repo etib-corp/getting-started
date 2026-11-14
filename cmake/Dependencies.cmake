@@ -24,20 +24,41 @@ set(APP_GUILLAUME_REVISION 15a2426dfa7892823126cfc6eb653d81f06fd093)
 # which is on main.
 set(APP_MAIS_REVISION      bddc4f1b6dcc142f3d0295ab8b36174db3f1db5c)
 
-# evan builds exactly one backend and one platform. The application is a
-# desktop one: GLFW, on the platform of the host.
-set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+# evan builds exactly one backend and one platform: GLFW on a desktop host,
+# OpenXR on Android (Meta headsets).
+foreach(app_evan_option
+    BUILD_FOR_GLFW BUILD_FOR_OPENXR
+    BUILD_FOR_MACOS BUILD_FOR_LINUX BUILD_FOR_WINDOWS BUILD_FOR_ANDROID
+)
+    set(${app_evan_option} OFF CACHE BOOL "" FORCE)
+endforeach()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(BUILD_FOR_OPENXR ON CACHE BOOL "" FORCE)
+    set(BUILD_FOR_ANDROID ON CACHE BOOL "" FORCE)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
     set(BUILD_FOR_MACOS ON CACHE BOOL "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
     set(BUILD_FOR_LINUX ON CACHE BOOL "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
     set(BUILD_FOR_WINDOWS ON CACHE BOOL "" FORCE)
 else()
     message(FATAL_ERROR
-        "${APP_NAME} supports macOS, Linux and Windows "
+        "${APP_NAME} supports macOS, Linux, Windows and Android "
         "(got ${CMAKE_SYSTEM_NAME})."
     )
+endif()
+
+# Python scripting needs a Python built for the target. There is none in the
+# Android build yet, so mais is left out there and the host fills the frame
+# context itself (see platforms/android/app/cpp/main.cpp).
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(APP_ENABLE_SCRIPTING OFF)
+else()
+    set(APP_ENABLE_SCRIPTING ON)
 endif()
 
 # The libraries are consumed as libraries only: their tests, examples,
@@ -76,21 +97,24 @@ FetchContent_Declare(guillaume
     SYSTEM
 )
 
-FetchContent_Declare(mais
-    GIT_REPOSITORY https://github.com/etib-corp/mais.git
-    GIT_TAG ${APP_MAIS_REVISION}
-    GIT_PROGRESS TRUE
-    EXCLUDE_FROM_ALL
-    SYSTEM
-)
+FetchContent_MakeAvailable(utility evan guillaume)
 
-FetchContent_MakeAvailable(utility evan guillaume mais)
+if(APP_ENABLE_SCRIPTING)
+    FetchContent_Declare(mais
+        GIT_REPOSITORY https://github.com/etib-corp/mais.git
+        GIT_TAG ${APP_MAIS_REVISION}
+        GIT_PROGRESS TRUE
+        EXCLUDE_FROM_ALL
+        SYSTEM
+    )
+    FetchContent_MakeAvailable(mais)
+endif()
 
 set(BUILD_TESTING ${APP_BUILD_TESTING} CACHE BOOL "" FORCE)
 
 # mais fetches pybind11 when it is not installed, which makes the target
 # visible here. When mais found an installed pybind11 instead, the imported
 # target is scoped to mais's directory and has to be found again.
-if(NOT TARGET pybind11::embed)
+if(APP_ENABLE_SCRIPTING AND NOT TARGET pybind11::embed)
     find_package(pybind11 CONFIG REQUIRED)
 endif()

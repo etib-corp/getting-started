@@ -25,14 +25,14 @@
 #include <functional>
 #include <string>
 
-#include "scripting/Scripting.hpp"
+#include "scripting/Services.hpp"
 
 /**
  * @file
- * @brief State shared between the host loop (main.cpp) and the scenes.
+ * @brief State shared between the host loop and the scenes.
  *
  * guillaume creates the scenes itself, so a scene cannot receive constructor
- * arguments from main(). Both sides reach the shared state through context()
+ * arguments from the host. Both sides reach the shared state through context()
  * instead.
  */
 
@@ -42,12 +42,17 @@ namespace app
 	 * @brief What the host loop and the scenes exchange.
 	 */
 	struct Context {
-		/// State exposed to the Python scripts.
+		/// Settings, per-frame values and requests. Exposed to the Python
+		/// scripts on platforms where scripting is enabled.
 		scripting::Services scripting;
 
 		/// Set by the active scene: shows a line of text in the window. Empty
 		/// when no scene displays the status.
 		std::function<void(const std::string &)> showStatus;
+
+		/// The status currently shown, so it is only pushed when it changes.
+		/// A scene clears it when it sets showStatus.
+		std::string shownStatus;
 	};
 
 	/**

@@ -1,10 +1,13 @@
 """Application script, run by the host through mais.
 
-The host (src/main.cpp) owns the window, the engine and the frame loop. It
-calls the functions below at fixed points of a session. Every function is
+The host (platforms/desktop/main.cpp) owns the window, the engine and the
+frame loop. It calls the functions below at fixed points of a session. Every function is
 optional: delete the ones you do not need.
 
-What a script can see is defined in src/scripting/Scripting.hpp and bound in
+Scripts run on desktop only. The Android build has no Python: its host
+(platforms/android/app/cpp/main.cpp) fills the frame context itself.
+
+What a script can see is defined in src/scripting/Services.hpp and bound in
 src/scripting/Scripting.cpp. Add fields and commands there.
 
 Keep hooks fast: they run on the main thread, inside the frame.

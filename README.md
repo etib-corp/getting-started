@@ -1,12 +1,13 @@
 # Getting started
 
-A ready-to-develop desktop application built on the three ETIB libraries:
+A ready-to-develop application built on the three ETIB libraries. It runs on
+desktop (macOS, Linux, Windows) and on Meta headsets (Android, OpenXR):
 
 | Library | Role in the application |
 | --- | --- |
-| [evan](https://github.com/etib-corp/evan) | Opens the window and renders with Vulkan (GLFW backend). |
+| [evan](https://github.com/etib-corp/evan) | Renders with Vulkan: a GLFW window on desktop, OpenXR on a headset. |
 | [guillaume](https://github.com/etib-corp/guillaume) | UI framework: scenes, widgets, layout, events, theme, storage. |
-| [maïs](https://github.com/etib-corp/mais) | Runs the application's Python scripts (embedded through pybind11). |
+| [maïs](https://github.com/etib-corp/mais) | Runs the application's Python scripts (embedded through pybind11). Desktop only for now. |
 
 Clone it, build it, and you get a window with a few widgets and a Python
 script driving one of them. Then replace the scene and the script with your
@@ -46,16 +47,22 @@ ctest --preset default
 ## What is in the repository
 
 ```text
-CMakeLists.txt            the application target; rename the app here
+CMakeLists.txt            the desktop build; rename the app here
 CMakePresets.json         default (debug), release, siblings (local libraries)
 cmake/
   Dependencies.cmake      the pinned revisions of the libraries
-  Runtime.cmake           what is copied next to the executable
-src/
-  main.cpp                the host: start-up order and frame loop
+  EngineAssets.cmake      the shaders and fonts taken from the libraries
+  Runtime.cmake           what is copied next to the desktop executable
+src/                      code shared by every platform
+  Application.hpp         the list of scenes
   AppContext.hpp          state shared by the frame loop and the scenes
+  Frame.hpp               what every host does around a frame
   scenes/HomeScene.cpp    the start-up scene: build your UI here
-  scripting/Scripting.*   what Python can see of the application
+  scripting/Services.hpp  the state the hosts fill and Python can see
+  scripting/Scripting.*   the Python bindings (desktop)
+platforms/
+  desktop/main.cpp        the desktop host: start-up order and frame loop
+  android/                the Gradle project for Meta headsets
 scripts/app.py            the Python hooks
 assets/                   your models, images and textures
 tests/                    tests that run without a window
@@ -65,7 +72,8 @@ tools/                    formatting and Linux set-up scripts
 
 ## How a session runs
 
-`src/main.cpp` owns the order. The libraries do not know about each other.
+On desktop, `platforms/desktop/main.cpp` owns the order. The libraries do not
+know about each other.
 
 1. maïs starts Python and loads `scripts/app.py`.
 2. `configure(settings)`: the script proposes the window title and size.
@@ -84,6 +92,9 @@ window. This is the full round trip: widget, host, Python, host, widget.
 A failing `on_update` is printed once with its Python traceback and the window
 stays open.
 
+On a headset, `platforms/android/app/cpp/main.cpp` runs the same scenes
+without Python: steps 4 and 6 only, with the host writing the status line.
+
 ## Common tasks
 
 ### Add widgets
@@ -96,19 +107,20 @@ shows every widget with the code that creates it.
 ### Add a scene
 
 1. Copy `src/scenes/HomeScene.*` to a new class and add the `.cpp` to
-   `add_executable()` in `CMakeLists.txt`.
-2. List the class in `guillaume::Application<HomeScene, MyScene>` in
-   `src/main.cpp`. The first one is shown at start-up.
+   `src/CMakeLists.txt`.
+2. List the class in the `app::Application` alias in `src/Application.hpp`.
+   The first one is shown at start-up, on every platform.
 3. Switch from a click handler with `goToScene<MyScene>()`.
 
 ### Expose something to Python
 
 1. Add a field to `FrameContext` (or a new structure) in
-   `src/scripting/Scripting.hpp`.
+   `src/scripting/Services.hpp`.
 2. Bind it in `registerBindings()` in `src/scripting/Scripting.cpp`:
    `def_readonly` for values the script reads, `def_readwrite` for values it
    writes, `host.def(...)` for a command.
-3. Fill it before the hook, or act on it after the hook, in `src/main.cpp`.
+3. Fill it before the hook, or act on it after the hook, in
+   `platforms/desktop/main.cpp`.
 4. Add a check in `tests/ScriptingTest.cpp`.
 
 Scripts receive plain values, never the engine or a widget. A command sets a
@@ -150,7 +162,44 @@ revisions. For a single library, pass
 ### Rename the application
 
 Change `APP_NAME` at the top of `CMakeLists.txt`. The executable and the
-targets follow. The window title is set in `scripts/app.py`.
+targets follow. The window title is set in `scripts/app.py`. For Android,
+also change `APP_NAME` in `platforms/android/app/cpp/CMakeLists.txt`, the
+library name and label in `AndroidManifest.xml`, and the application id in
+`app/build.gradle.kts`.
+
+## Meta headset (Android)
+
+`platforms/android` is a Gradle project that builds the same application as
+an APK for Meta Quest headsets. It reuses `src/`, `assets/` and the pinned
+libraries, with evan's OpenXR backend and a fully native activity.
+
+You need a JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or
+`sdk.dir=<path>` in `platforms/android/local.properties`), with the SDK's
+CMake 3.31.5 package installed (SDK Manager > SDK Tools, or
+`sdkmanager "cmake;3.31.5"`). Gradle downloads the NDK itself. Opening
+`platforms/android` in Android Studio works too.
+
+```sh
+cd platforms/android
+./gradlew assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The headset must be in developer mode and connected over USB. The application
+then appears in the headset's library under "Unknown sources". Logs go to
+`adb logcat`.
+
+Differences from desktop:
+
+- **No Python.** maïs needs a Python built for Android, which the project
+  does not ship yet, so `scripts/app.py` does not run on the headset. The
+  host writes the status line itself (`app::writeDefaultStatus`). Give every
+  script-driven feature a C++ fallback in `src/Frame.cpp`.
+- **No window settings.** The headset decides the resolution.
+- **VR by default.** For passthrough and hand tracking, see the comment in
+  `platforms/android/app/cpp/main.cpp`.
+
+See [platforms/android/README.md](platforms/android/README.md) for details.
 
 ## Tests
 
