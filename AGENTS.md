@@ -38,6 +38,8 @@ without a person closing the window.
 - `src/scripting/` — the adapter between the host and Python. The only code
   that includes pybind11.
 - `src/AppContext.*` — state shared by the host loop and the scenes.
+- `docs/` — one page per library, explaining what it does and where the
+  application uses it.
 - `scripts/` — Python run by the application. Shell scripts go in `tools/`.
 - `assets/` — application assets, copied next to the executable.
 
