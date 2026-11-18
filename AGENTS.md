@@ -2,7 +2,7 @@
 
 ## Repository purpose
 
-A starter desktop application that wires three ETIB libraries together: evan
+A starter desktop application that wires three XIDER libraries together: evan
 (Vulkan rendering, GLFW window), guillaume (UI framework) and maïs (embedded
 Python scripting). It is an application, not a library: nothing here is
 installed or exported.
