@@ -23,6 +23,16 @@ add_test(NAME scripting.bindings
         ${CMAKE_CURRENT_SOURCE_DIR}/scripts fixture
 )
 
+# The tests load python3XX.dll from the interpreter's own directory. PATH is
+# prepended when CMake knows the interpreter, so a configure that selected it
+# with -DPython_EXECUTABLE runs the tests too.
+if(APP_PYTHON_DIR)
+    set_tests_properties(scripting.app_script scripting.bindings PROPERTIES
+        ENVIRONMENT_MODIFICATION
+            "PATH=path_list_prepend:${APP_PYTHON_DIR}"
+    )
+endif()
+
 # Opens the window, draws 120 frames and exits. Off by default because it
 # needs a display and a Vulkan driver: -DAPP_ENABLE_GPU_TESTS=ON.
 if(APP_ENABLE_GPU_TESTS)
@@ -35,4 +45,10 @@ if(APP_ENABLE_GPU_TESTS)
         PASS_REGULAR_EXPRESSION "app.py: stopped after 120 frames"
         TIMEOUT 120
     )
+    if(APP_PYTHON_DIR)
+        set_tests_properties(app.smoke PROPERTIES
+            ENVIRONMENT_MODIFICATION
+                "PATH=path_list_prepend:${APP_PYTHON_DIR}"
+        )
+    endif()
 endif()
