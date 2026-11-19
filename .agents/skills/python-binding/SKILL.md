@@ -5,13 +5,14 @@ description: Expose a value, a setting or a command of the application to the Py
 
 # Python bindings and hooks
 
-Three places always change together:
+These places always change together:
 
 | Place | Role |
 | --- | --- |
-| `src/scripting/Services.hpp` | The plain structures Python sees (`Settings`, `FrameContext`, `Services`). No mais or pybind11 include: Android uses it too. |
+| `src/scripting/Services.hpp` | The plain structures Python sees (`Settings`, `FrameContext`, `Services`). No mais or pybind11 include: the scenes use it too. |
 | `src/scripting/Scripting.cpp` | The pybind11 bindings of the `host` module. The only file that includes pybind11. |
 | `platforms/desktop/main.cpp` | Fills the structures before a hook, calls the hook, acts on the result. |
+| `platforms/android/app/cpp/main.cpp` | The same on a headset. |
 
 ## Expose a value to scripts
 
@@ -19,16 +20,16 @@ Three places always change together:
    `Services.hpp`, with a Doxygen comment saying who writes it.
 2. Bind it in `registerBindings()`: `def_readonly` when the host writes it,
    `def_readwrite` when the script writes it. Python names are `snake_case`.
-3. In `platforms/desktop/main.cpp`, write it before the hook is called, or
-   read it after.
+3. In both hosts (`platforms/desktop/main.cpp` and
+   `platforms/android/app/cpp/main.cpp`), write it before the hook is
+   called, or read it after.
 4. Use it in `scripts/app.py`.
 5. Cover it in `tests/ScriptingTest.cpp` and `tests/scripts/fixture.py`.
 
 ## Add a command
 
 A command is a request. Bind a function with `host.def(...)` that only sets a
-flag in `Services`; the frame loop in `platforms/desktop/main.cpp` reads the
-flag and acts.
+flag in `Services`; the frame loop of each host reads the flag and acts.
 `request_quit` is the model.
 
 ## Add a setting
@@ -39,7 +40,7 @@ at start-up: the libraries have no runtime reconfiguration.
 
 ## Add a hook
 
-Call it from `platforms/desktop/main.cpp` with
+Call it from both hosts, at the same point of the session, with
 `runtime.callOptional(policy, scriptModule, "name", { ...arguments })`. Pick the policy on purpose:
 
 - `Stop` for start-up hooks: a failure must prevent the next step.
@@ -49,10 +50,17 @@ Call it from `platforms/desktop/main.cpp` with
 
 ## Android
 
-The Android build has no Python. A value the script computes on desktop has
-to be computed by the Android host too, or the feature is missing on the
-headset: put the fallback in `src/Frame.cpp` (see `writeDefaultStatus`) and
-call it from `platforms/android/app/cpp/main.cpp`.
+The Android host runs the same script with the Python 3.15 packaged in the
+APK (see the `android-headset` skill). What differs from desktop:
+
+- A script error never stops the application there: after a failed start,
+  `configure` or `on_start`, the hooks are no longer called and the host
+  uses the C++ fallbacks of `src/Frame.cpp` (see `writeDefaultStatus`).
+- The window settings of `configure` are validated and not used.
+- Errors go to `adb logcat` with the tag `getting_started`, `print` with the
+  tag `python.stdout`.
+- Scripts must run on both Python versions and use the standard library
+  only.
 
 ## Never do this
 

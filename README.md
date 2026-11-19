@@ -7,7 +7,7 @@ desktop (macOS, Linux, Windows) and on Meta headsets (Android, OpenXR):
 | --- | --- |
 | [evan](https://github.com/etib-corp/evan) | Renders with Vulkan: a GLFW window on desktop, OpenXR on a headset. |
 | [guillaume](https://github.com/etib-corp/guillaume) | UI framework: scenes, widgets, layout, events, theme, storage. |
-| [maïs](https://github.com/etib-corp/mais) | Runs the application's Python scripts (embedded through pybind11). Desktop only for now. |
+| [maïs](https://github.com/etib-corp/mais) | Runs the application's Python scripts (embedded through pybind11), on desktop and on a headset. |
 
 Clone it, build it, and you get a window with a few widgets and a Python
 script driving one of them. Then replace the scene and the script with your
@@ -18,7 +18,7 @@ own.
 - CMake 3.28 or newer and a C++20 compiler
 - Git and network access (the first configure downloads the libraries)
 - The Vulkan SDK ([LunarG](https://vulkan.lunarg.com/sdk/home))
-- Python 3.9 to 3.14 **with its development files** (`python3-dev` on Debian
+- Python 3.9 to 3.15 **with its development files** (`python3-dev` on Debian
   and Ubuntu; included in the python.org, Homebrew and Xcode installations)
 - On Linux, the window-system packages:
   `bash tools/install_ubuntu_dependencies.sh`
@@ -52,6 +52,8 @@ CMakeLists.txt            the desktop build; rename the app here
 CMakePresets.json         default (debug), release, siblings (local libraries)
 cmake/
   Dependencies.cmake      the pinned revisions of the libraries
+  AndroidPython.cmake     the python.org package embedded in the Android build
+  AssetTree.cmake         packages a directory as APK assets with a manifest
   EngineAssets.cmake      the shaders and fonts taken from the libraries
   Runtime.cmake           what is copied next to the desktop executable
 src/                      code shared by every platform
@@ -60,7 +62,7 @@ src/                      code shared by every platform
   Frame.hpp               what every host does around a frame
   scenes/HomeScene.cpp    the start-up scene: build your UI here
   scripting/Services.hpp  the state the hosts fill and Python can see
-  scripting/Scripting.*   the Python bindings (desktop)
+  scripting/Scripting.*   the Python bindings
 platforms/
   desktop/main.cpp        the desktop host: start-up order and frame loop
   android/                the Gradle project for Meta headsets
@@ -93,8 +95,11 @@ window. This is the full round trip: widget, host, Python, host, widget.
 A failing `on_update` is printed once with its Python traceback and the window
 stays open.
 
-On a headset, `platforms/android/app/cpp/main.cpp` runs the same scenes
-without Python: steps 4 and 6 only, with the host writing the status line.
+On a headset, `platforms/android/app/cpp/main.cpp` follows the same order
+with the Python packaged in the APK. Two differences: the proposal of step 2
+is validated but not used (there is no window), and a script that fails to
+start does not stop the application: the error goes to `adb logcat` and the
+host writes the status line itself.
 
 ## Common tasks
 
@@ -192,10 +197,18 @@ then appears in the headset's library under "Unknown sources". Logs go to
 
 Differences from desktop:
 
-- **No Python.** maïs needs a Python built for Android, which the project
-  does not ship yet, so `scripts/app.py` does not run on the headset. The
-  host writes the status line itself (`app::writeDefaultStatus`). Give every
-  script-driven feature a C++ fallback in `src/Frame.cpp`.
+- **Python comes with the APK.** The build downloads the Android package
+  of Python 3.15.2 from [python.org](https://www.python.org/downloads/release/python-3152/)
+  (`cmake/AndroidPython.cmake`), links its `libpython3.15.so` and packages its
+  standard library and `scripts/` as assets. At the first start they are
+  copied to the application's private directory. `print` goes to
+  `adb logcat` with the tag `python.stdout`.
+- **One script, two Pythons.** Desktop runs `scripts/app.py` with the Python
+  of the machine, the headset with 3.15: keep the script valid for both and
+  on the standard library (no pip package is in the APK).
+- **A script problem does not stop the application.** It is logged with the
+  tag `getting_started` and the host writes the status line itself
+  (`app::writeDefaultStatus` in `src/Frame.cpp`).
 - **No window settings.** The headset decides the resolution.
 - **VR by default.** For passthrough and hand tracking, see the comment in
   `platforms/android/app/cpp/main.cpp`.

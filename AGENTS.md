@@ -4,8 +4,8 @@
 
 A starter application that wires three ETIB libraries together: evan (Vulkan
 rendering; GLFW on desktop, OpenXR on Meta headsets), guillaume (UI framework)
-and maïs (embedded Python scripting, desktop only). It is an application, not a library: nothing here is
-installed or exported.
+and maïs (embedded Python scripting). It is an application, not a library:
+nothing here is installed or exported.
 
 ## Tech stack
 
@@ -13,6 +13,9 @@ installed or exported.
 - **Build system**: CMake 3.28+ with presets (`default`, `release`, `siblings`)
 - **Dependencies**: fetched with FetchContent at the revisions pinned in
   `cmake/Dependencies.cmake`; nothing is vendored
+- **Python**: the one installed on the machine on desktop; on Android, the
+  embeddable package published on python.org, pinned by version and SHA-256
+  in `cmake/AndroidPython.cmake`
 - **Tests**: CTest with a plain executable (`tests/ScriptingTest.cpp`)
 - **Formatter**: clang-format 21.1.8 (LLVM-based, 80 columns, tabs)
 - **Android**: a Gradle project in `platforms/android` (AGP, NDK, native
@@ -38,18 +41,21 @@ without a person closing the window.
   all three libraries: start-up order, frame loop, when each Python hook is
   called.
 - `platforms/android/` — the Gradle project and the Android host
-  (`app/cpp/main.cpp`): OpenXR, APK assets, activity lifecycle, no Python.
-- `src/` — code shared by both hosts, listed in `src/CMakeLists.txt`. It
-  depends on guillaume only.
+  (`app/cpp/main.cpp`): OpenXR, APK assets, activity lifecycle, and the same
+  Python hooks as desktop. `app/cpp/AssetTree.*` copies the Python files out
+  of the APK.
+- `src/` — code shared by both hosts, listed in `src/CMakeLists.txt`. Apart
+  from `src/scripting/Scripting.*`, it depends on guillaume only.
   - `src/Application.hpp` — the list of scenes.
   - `src/scenes/` — guillaume scenes. UI code only.
   - `src/AppContext.*`, `src/Frame.*` — state and per-frame helpers shared by
     the hosts and the scenes.
   - `src/scripting/Services.hpp` — the plain state the hosts fill and Python
     sees.
-- `src/scripting/Scripting.*` — the adapter between the desktop host and
-  Python. The only code that includes pybind11; not built for Android.
-- `scripts/` — Python run by the application. Shell scripts go in `tools/`.
+- `src/scripting/Scripting.*` — the adapter between a host and Python. The
+  only code that includes pybind11; built for both hosts.
+- `scripts/` — Python run by the application, on desktop and on the headset
+  (packaged in the APK). Shell scripts go in `tools/`.
 - `assets/` — application assets, copied next to the executable.
 
 ## Rules
@@ -60,14 +66,21 @@ without a person closing the window.
 - Everything Python can reach must outlive the `mais::ScriptRuntime`: keep it
   in `app::Context`.
 - Hooks run on the main thread inside the frame. No blocking calls in them.
-- Shared code under `src/` is compiled for Android: no mais, pybind11, evan
-  or desktop-only API in it. A feature driven by a script needs a C++
-  fallback, or it is missing on the headset.
+- Shared code under `src/` is compiled for Android: no evan or desktop-only
+  API in it, and no mais or pybind11 outside `src/scripting/Scripting.*`.
+- Scripts run with the machine's Python on desktop and with Python 3.15 on
+  the headset: keep them valid for both, and use the standard library only
+  (no pip package is in the APK).
+- The Android host keeps running when Python or the script fails to start,
+  with the C++ fallbacks of `src/Frame.cpp` (`writeDefaultStatus`). Keep a
+  fallback for what the sample needs to show.
 - Add a scene to `src/Application.hpp`, never to one host only.
 - Do not add a dependency to the `mais` target: its configure-time boundary
   check fails the build.
 - Engine shaders and fonts are copied from the pinned libraries by
   `cmake/EngineAssets.cmake`, for both builds. Do not commit copies of them.
+- The Android Python is downloaded by `cmake/AndroidPython.cmake`. Do not
+  commit it, and change its version and checksums together.
 - Every source file starts with the MIT license header, and public
   declarations carry Doxygen comments, as in the libraries.
 - Run `./tools/run-clang-format.sh` before committing.

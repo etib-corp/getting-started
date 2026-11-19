@@ -30,9 +30,9 @@
  * @file
  * @brief The application state the hosts fill and the scripts can see.
  *
- * Plain structures with no dependency on Python, mais or an engine, so every
- * platform can use them: the desktop host hands them to the Python hooks, the
- * Android host fills them itself.
+ * Plain structures with no dependency on Python, mais or an engine. Both
+ * hosts hand them to the Python hooks; a host that runs without a script
+ * fills them itself.
  */
 
 namespace app::scripting
@@ -41,7 +41,8 @@ namespace app::scripting
 	 * @brief Start-up settings a script may propose in `configure(settings)`.
 	 *
 	 * The host validates the proposal with validate() before the window is
-	 * created; an invalid proposal is replaced by the defaults.
+	 * created; an invalid proposal is replaced by the defaults. A headset has
+	 * no window: the Android host validates the proposal and does not use it.
 	 */
 	struct Settings {
 		std::string windowTitle = "Getting started";	///< Window title

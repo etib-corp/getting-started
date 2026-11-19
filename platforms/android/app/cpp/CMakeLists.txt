@@ -33,8 +33,8 @@ set(ALSOFT_ENABLE_MODULES OFF CACHE BOOL "" FORCE)
 
 # 02. Dependencies and shared application code
 #
-# On Android, Dependencies.cmake selects evan's OpenXR backend and leaves mais
-# out (no Python in the Android build).
+# On Android, Dependencies.cmake selects evan's OpenXR backend and sets up the
+# Python published on python.org for mais (cmake/AndroidPython.cmake).
 
 include(${APP_ROOT_DIR}/cmake/Dependencies.cmake)
 include(${APP_ROOT_DIR}/cmake/EngineAssets.cmake)
@@ -57,17 +57,20 @@ target_include_directories(native_app_glue
 # Its name is the `android.app.lib_name` value of AndroidManifest.xml.
 
 add_library(${PROJECT_NAME} SHARED
+    AssetTree.cpp
     main.cpp
 )
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         APP_NAME="${APP_NAME}"
+        APP_PYTHON_STDLIB_SUBDIR="${APP_PYTHON_ANDROID_STDLIB_SUBDIR}"
 )
 
 target_link_libraries(${PROJECT_NAME}
     PRIVATE
         ${APP_NAME}_core
+        ${APP_NAME}_scripting
         evan
         native_app_glue
         android
@@ -110,3 +113,54 @@ add_custom_target(${APP_NAME}_engine_assets
 
 # Gradle builds the library targets, not `all`: tie the copy to the library.
 add_dependencies(${PROJECT_NAME} ${APP_NAME}_engine_assets)
+
+# 06. Python runtime and scripts
+#
+# Python reads its standard library and the scripts from real files, which an
+# APK does not have. Both trees are packaged as assets with a manifest
+# (cmake/AssetTree.cmake) and the host copies them to the application's
+# private directory at start-up:
+#
+#   assets/python/lib/python3.x/   the standard library, without its tests
+#   assets/scripts/                this repository's scripts/
+#
+# The standard library only changes with the Python version, so its stamp is
+# the checksum of the python.org package. The scripts are hashed on every
+# build.
+
+if(NOT APP_PYTHON_ASSETS_OUTPUT_DIR)
+    set(APP_PYTHON_ASSETS_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/python-assets)
+endif()
+if(NOT APP_PYTHON_LIBS_OUTPUT_DIR)
+    set(APP_PYTHON_LIBS_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/python-libs)
+endif()
+
+# A list given to `cmake -D` on a command line: escape its separators.
+string(REPLACE ";" "\\;" app_python_stdlib_exclude
+    "${APP_PYTHON_ANDROID_STDLIB_EXCLUDE}"
+)
+
+add_custom_target(${APP_NAME}_python_assets
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${APP_PYTHON_ANDROID_STDLIB_DIR}
+        -DOUTPUT_DIR=${APP_PYTHON_ASSETS_OUTPUT_DIR}/python/${APP_PYTHON_ANDROID_STDLIB_SUBDIR}
+        -DEXCLUDE=${app_python_stdlib_exclude}
+        -DSTAMP=${APP_PYTHON_ANDROID_VERSION}-${APP_PYTHON_ANDROID_SHA256}
+        -P ${APP_ROOT_DIR}/cmake/AssetTree.cmake
+    COMMAND ${CMAKE_COMMAND}
+        -DSOURCE_DIR=${APP_ROOT_DIR}/scripts
+        -DOUTPUT_DIR=${APP_PYTHON_ASSETS_OUTPUT_DIR}/scripts
+        -DEXCLUDE=__pycache__/
+        -P ${APP_ROOT_DIR}/cmake/AssetTree.cmake
+    # The libraries the standard library's extension modules load. Gradle
+    # packages this directory as native libraries (see app/build.gradle.kts).
+    COMMAND ${CMAKE_COMMAND} -E make_directory
+        ${APP_PYTHON_LIBS_OUTPUT_DIR}/${ANDROID_ABI}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${APP_PYTHON_ANDROID_RUNTIME_LIBRARIES}
+        ${APP_PYTHON_LIBS_OUTPUT_DIR}/${ANDROID_ABI}
+    COMMENT "Copying the Python runtime and the scripts to the APK"
+    VERBATIM
+)
+
+add_dependencies(${PROJECT_NAME} ${APP_NAME}_python_assets)

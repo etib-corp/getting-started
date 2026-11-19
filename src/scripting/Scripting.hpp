@@ -35,8 +35,9 @@
  * after it. To expose something new to Python, add a field or a command
  * there and bind it in Scripting.cpp.
  *
- * This header includes no pybind11 header, so the host does not depend on it.
- * It is only built on platforms where scripting is enabled.
+ * This header includes no pybind11 header, so the hosts do not depend on it.
+ * Both hosts use it: desktop with the Python of the machine, Android with
+ * the Python packaged in the APK.
  */
 
 namespace app::scripting

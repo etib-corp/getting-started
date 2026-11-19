@@ -43,6 +43,10 @@ The revisions are the four `APP_*_REVISION` variables at the top of
   its shaders and guillaume's copy lags, the window opens and draws nothing or reports pipeline errors.
 - **mais and pybind11**: mais selects the pybind11 version and the supported
   Python range. A configure error naming the Python version comes from mais.
+- **Python on Android**: `cmake/AndroidPython.cmake` pins the python.org
+  Android package (version and one SHA-256 per ABI, from the "Files" table
+  of the release page). The Python series must be in the supported range of
+  the pinned mais, which also selects a pybind11 that supports it.
 - **CMake options**: the three libraries share option names (`BUILD_TESTING`,
   `BUILD_EXAMPLES`, `DEV_MODE`, ...). `cmake/Dependencies.cmake` forces the
   shared ones off. Check a new library version for new shared options.

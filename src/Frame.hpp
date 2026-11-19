@@ -67,8 +67,8 @@ namespace app
 	/**
 	 * @brief Write the status line when no script does it.
 	 *
-	 * Used by hosts built without scripting, so the sample shows the same
-	 * line on every platform.
+	 * Used by a host whose script is not running (on a headset, when Python
+	 * or the script failed to start), so the sample still shows a line.
 	 * @param frame The frame context; `status` is written.
 	 */
 	void writeDefaultStatus(scripting::FrameContext &frame);

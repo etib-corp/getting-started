@@ -16,7 +16,8 @@ Rules:
 2. Only the hosts (`platforms/desktop/main.cpp`,
    `platforms/android/app/cpp/main.cpp`) include evan headers. Everything
    listed in `src/CMakeLists.txt` is built for Android too: it uses
-   guillaume and the standard library only, never mais, pybind11 or evan.
+   guillaume and the standard library only, never evan, and never mais or
+   pybind11 outside `src/scripting/Scripting.*`.
 3. Python sees plain values in the structures of `Services.hpp`. No engine,
    scene, widget or `mais::ScriptRuntime` is bound.
 4. A bound command only sets a flag in `Services`. The frame loop acts on it.
@@ -35,8 +36,11 @@ Rules:
 11. Library revisions in `cmake/Dependencies.cmake` are tags or full commit
     hashes, never branch names.
 12. New source files start with the MIT license header.
-13. A scene is added to `src/Application.hpp`, not to one host. A feature
-    that depends on a script has a C++ fallback for Android.
+13. A scene is added to `src/Application.hpp`, not to one host. A hook is
+    called by both hosts, at the same point of the session.
+14. `scripts/` uses the Python standard library only and no syntax newer
+    than the oldest desktop Python supported (3.9): the same files run on
+    the headset with Python 3.15.
 
 For each violation give `file:line`, the rule number and the smallest fix. If
 there is none, say so in one line. Do not comment on style that clang-format

@@ -20,9 +20,9 @@ set(APP_UTILITY_REVISION   dde6d86ad13972f208a1cdb90058bfd9f1a132d3)
 set(APP_EVAN_REVISION      v2026.4.7)
 # guillaume 2026.6.1 (the revision has no tag yet).
 set(APP_GUILLAUME_REVISION 15a2426dfa7892823126cfc6eb653d81f06fd093)
-# mais has no release tag yet. The application needs ScriptArgument::native(),
-# which is on main.
-set(APP_MAIS_REVISION      bddc4f1b6dcc142f3d0295ab8b36174db3f1db5c)
+# mais has no release tag yet. The application needs ScriptArgument::native()
+# and Python 3.15 (the Android build embeds it), which are on main.
+set(APP_MAIS_REVISION      36943a5456018a81ed4f9a7ef3a085cbbf2cca03)
 
 # evan builds exactly one backend and one platform: GLFW on a desktop host,
 # OpenXR on Android (Meta headsets).
@@ -52,13 +52,11 @@ else()
     )
 endif()
 
-# Python scripting needs a Python built for the target. There is none in the
-# Android build yet, so mais is left out there and the host fills the frame
-# context itself (see platforms/android/app/cpp/main.cpp).
+# Python scripting is built everywhere. The desktop build embeds the Python
+# installed on the machine; the Android build embeds the package published on
+# python.org, which has to be set up before mais looks for Python.
 if(CMAKE_SYSTEM_NAME STREQUAL "Android")
-    set(APP_ENABLE_SCRIPTING OFF)
-else()
-    set(APP_ENABLE_SCRIPTING ON)
+    include(${CMAKE_CURRENT_LIST_DIR}/AndroidPython.cmake)
 endif()
 
 # Workaround for https://github.com/etib-corp/evan/issues/183 and
@@ -107,22 +105,20 @@ FetchContent_Declare(guillaume
 
 FetchContent_MakeAvailable(utility evan guillaume)
 
-if(APP_ENABLE_SCRIPTING)
-    FetchContent_Declare(mais
-        GIT_REPOSITORY https://github.com/etib-corp/mais.git
-        GIT_TAG ${APP_MAIS_REVISION}
-        GIT_PROGRESS TRUE
-        EXCLUDE_FROM_ALL
-        SYSTEM
-    )
-    FetchContent_MakeAvailable(mais)
-endif()
+FetchContent_Declare(mais
+    GIT_REPOSITORY https://github.com/etib-corp/mais.git
+    GIT_TAG ${APP_MAIS_REVISION}
+    GIT_PROGRESS TRUE
+    EXCLUDE_FROM_ALL
+    SYSTEM
+)
+FetchContent_MakeAvailable(mais)
 
 set(BUILD_TESTING ${APP_BUILD_TESTING} CACHE BOOL "" FORCE)
 
 # mais fetches pybind11 when it is not installed, which makes the target
 # visible here. When mais found an installed pybind11 instead, the imported
 # target is scoped to mais's directory and has to be found again.
-if(APP_ENABLE_SCRIPTING AND NOT TARGET pybind11::embed)
+if(NOT TARGET pybind11::embed)
     find_package(pybind11 CONFIG REQUIRED)
 endif()
