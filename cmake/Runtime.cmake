@@ -15,28 +15,26 @@
 # Files from the libraries are taken from their pinned sources, so they always
 # match the library version that is linked.
 
+include(${CMAKE_CURRENT_LIST_DIR}/EngineAssets.cmake)
+
 set(APP_RUNTIME_DIR $<TARGET_FILE_DIR:${APP_NAME}>)
-set(APP_ENGINE_ASSETS_DIR ${guillaume_SOURCE_DIR}/examples/evan/assets)
-set(APP_SYMBOLS_FONT_DIR fonts/Material_Symbols_Outlined)
 
 # Library files change only with the pinned revisions: copy them when the
 # executable is linked.
 add_custom_command(TARGET ${APP_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${APP_ENGINE_ASSETS_DIR}/shaders
+        ${APP_ENGINE_SHADERS_DIR}
         ${APP_RUNTIME_DIR}/shaders
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${APP_ENGINE_ASSETS_DIR}/textures
+        ${APP_ENGINE_TEXTURES_DIR}
         ${APP_RUNTIME_DIR}/textures
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${guillaume_SOURCE_DIR}/fonts
+        ${APP_ENGINE_FONTS_DIR}
         ${APP_RUNTIME_DIR}/fonts
     COMMAND ${CMAKE_COMMAND} -E make_directory
         ${APP_RUNTIME_DIR}/${APP_SYMBOLS_FONT_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${APP_ENGINE_ASSETS_DIR}/${APP_SYMBOLS_FONT_DIR}/MaterialSymbolsOutlined-VariableFont_FILL,GRAD,opsz,wght.ttf"
-        "${APP_ENGINE_ASSETS_DIR}/${APP_SYMBOLS_FONT_DIR}/MaterialSymbolsOutlined[FILL,GRAD,opsz,wght].codepoints"
-        "${APP_ENGINE_ASSETS_DIR}/${APP_SYMBOLS_FONT_DIR}/LICENSE.txt"
+        ${APP_SYMBOLS_FONT_FILES}
         ${APP_RUNTIME_DIR}/${APP_SYMBOLS_FONT_DIR}
     COMMENT "Copying engine shaders and fonts"
     VERBATIM

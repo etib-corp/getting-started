@@ -1,15 +1,16 @@
 # Getting started
 
-A ready-to-develop desktop application built on the three XIDER libraries:
+A ready-to-develop application built on the three XIDER libraries. It runs on
+desktop (macOS, Linux, Windows) and on Meta headsets (Android, OpenXR):
 
 | Library | What it does | In this application | Read more |
 | --- | --- | --- | --- |
-| [evan](https://github.com/etib-corp/evan) | Opens the window and renders with Vulkan, through its GLFW desktop backend. | Creates the window and the engine guillaume draws through. | [docs/evan.md](docs/evan.md) |
+| [evan](https://github.com/etib-corp/evan) | Renders with Vulkan: a GLFW window on desktop, OpenXR on a headset. | Creates the window or the headset session, and the engine guillaume draws through. | [docs/evan.md](docs/evan.md) |
 | [guillaume](https://github.com/etib-corp/guillaume) | UI framework: application shell, scenes, widgets, layout, events, theme and storage. | Owns the frame and the `HomeScene` widgets. | [docs/guillaume.md](docs/guillaume.md) |
-| [maïs](https://github.com/etib-corp/mais) | Embedded Python runtime: interpreter lifecycle, script loading, hooks and host bindings. | Runs `scripts/app.py` and exposes the `host` module. | [docs/mais.md](docs/mais.md) |
+| [maïs](https://github.com/etib-corp/mais) | Embedded Python runtime: interpreter lifecycle, script loading, hooks and host bindings. | Runs `scripts/app.py` and exposes the `host` module, on desktop and on a headset. | [docs/mais.md](docs/mais.md) |
 
 Each page explains what the library does on its own, what it leaves to the
-others, which parts the application uses and where they appear in `src/`.
+others, which parts the application uses and where they appear in the code.
 [docs/README.md](docs/README.md) shows how the three fit together.
 
 Clone it, build it, and you get a window with a few widgets and a Python
@@ -21,7 +22,7 @@ own.
 - CMake 3.28 or newer and a C++20 compiler
 - Git and network access (the first configure downloads the libraries)
 - The Vulkan SDK ([LunarG](https://vulkan.lunarg.com/sdk/home))
-- Python 3.9 to 3.14 **with its development files** (`python3-dev` on Debian
+- Python 3.9 to 3.15 **with its development files** (`python3-dev` on Debian
   and Ubuntu; included in the python.org, Homebrew and Xcode installations)
 - On Linux, the window-system packages:
   `bash tools/install_ubuntu_dependencies.sh`
@@ -30,13 +31,14 @@ own.
 
 ```sh
 cmake --preset default
-cmake --build --preset default --parallel
+cmake --build --preset default --parallel 8
 cmake --build --preset default --target run
 ```
 
 The first configure fetches evan, guillaume, maïs and their dependencies, and
 the first build compiles them: allow a few minutes. Later builds only compile
-what you change.
+what you change. Always give `--parallel` a number: with Makefiles, a bare
+`--parallel` starts every compilation at once.
 
 The executable is `build/bin/getting_started`. It can be started from any
 directory.
@@ -50,16 +52,24 @@ ctest --preset default
 ## What is in the repository
 
 ```text
-CMakeLists.txt            the application target; rename the app here
+CMakeLists.txt            the desktop build; rename the app here
 CMakePresets.json         default (debug), release, siblings (local libraries)
 cmake/
   Dependencies.cmake      the pinned revisions of the libraries
-  Runtime.cmake           what is copied next to the executable
-src/
-  main.cpp                the host: start-up order and frame loop
+  AndroidPython.cmake     the python.org package embedded in the Android build
+  AssetTree.cmake         packages a directory as APK assets with a manifest
+  EngineAssets.cmake      the shaders and fonts taken from the libraries
+  Runtime.cmake           what is copied next to the desktop executable
+src/                      code shared by every platform
+  Application.hpp         the list of scenes
   AppContext.hpp          state shared by the frame loop and the scenes
+  Frame.hpp               what every host does around a frame
   scenes/HomeScene.cpp    the start-up scene: build your UI here
-  scripting/Scripting.*   what Python can see of the application
+  scripting/Services.hpp  the state the hosts fill and Python can see
+  scripting/Scripting.*   the Python bindings
+platforms/
+  desktop/main.cpp        the desktop host: start-up order and frame loop
+  android/                the Gradle project for Meta headsets
 docs/                     one page per library: what it does and where we use it
 scripts/app.py            the Python hooks
 assets/                   your models, images and textures
@@ -70,7 +80,8 @@ tools/                    formatting and Linux set-up scripts
 
 ## How a session runs
 
-`src/main.cpp` owns the order. The libraries do not know about each other.
+On desktop, `platforms/desktop/main.cpp` owns the order. The libraries do not
+know about each other.
 
 1. maïs starts Python and loads `scripts/app.py`.
 2. `configure(settings)`: the script proposes the window title and size.
@@ -92,6 +103,12 @@ The same sequence, library by library, is in
 A failing `on_update` is printed once with its Python traceback and the window
 stays open.
 
+On a headset, `platforms/android/app/cpp/main.cpp` follows the same order
+with the Python packaged in the APK. Two differences: the proposal of step 2
+is validated but not used (there is no window), and a script that fails to
+start does not stop the application: the error goes to `adb logcat` and the
+host writes the status line itself.
+
 ## Common tasks
 
 ### Add widgets
@@ -106,19 +123,20 @@ themes them.
 ### Add a scene
 
 1. Copy `src/scenes/HomeScene.*` to a new class and add the `.cpp` to
-   `add_executable()` in `CMakeLists.txt`.
-2. List the class in `guillaume::Application<HomeScene, MyScene>` in
-   `src/main.cpp`. The first one is shown at start-up.
+   `src/CMakeLists.txt`.
+2. List the class in the `app::Application` alias in `src/Application.hpp`.
+   The first one is shown at start-up, on every platform.
 3. Switch from a click handler with `goToScene<MyScene>()`.
 
 ### Expose something to Python
 
 1. Add a field to `FrameContext` (or a new structure) in
-   `src/scripting/Scripting.hpp`.
+   `src/scripting/Services.hpp`.
 2. Bind it in `registerBindings()` in `src/scripting/Scripting.cpp`:
    `def_readonly` for values the script reads, `def_readwrite` for values it
    writes, `host.def(...)` for a command.
-3. Fill it before the hook, or act on it after the hook, in `src/main.cpp`.
+3. Fill it before the hook, or act on it after the hook, in
+   `platforms/desktop/main.cpp`.
 4. Add a check in `tests/ScriptingTest.cpp`.
 
 Scripts receive plain values, never the engine or a widget. A command sets a
@@ -150,7 +168,7 @@ With evan, guillaume and maïs checked out next to this repository:
 
 ```sh
 cmake --preset siblings
-cmake --build --preset siblings --parallel
+cmake --build --preset siblings --parallel 8
 cmake --build --preset siblings --target run
 ```
 
@@ -162,7 +180,52 @@ revisions. For a single library, pass
 ### Rename the application
 
 Change `APP_NAME` at the top of `CMakeLists.txt`. The executable and the
-targets follow. The window title is set in `scripts/app.py`.
+targets follow. The window title is set in `scripts/app.py`. For Android,
+also change `APP_NAME` in `platforms/android/app/cpp/CMakeLists.txt`, the
+library name and label in `AndroidManifest.xml`, and the application id in
+`app/build.gradle.kts`.
+
+## Meta headset (Android)
+
+`platforms/android` is a Gradle project that builds the same application as
+an APK for Meta Quest headsets. It reuses `src/`, `assets/` and the pinned
+libraries, with evan's OpenXR backend and a fully native activity.
+
+You need a JDK 17 or newer and the Android SDK (`ANDROID_HOME` set, or
+`sdk.dir=<path>` in `platforms/android/local.properties`), with the SDK's
+CMake 3.31.5 package installed (SDK Manager > SDK Tools, or
+`sdkmanager "cmake;3.31.5"`). Gradle downloads the NDK itself. Opening
+`platforms/android` in Android Studio works too.
+
+```sh
+cd platforms/android
+./gradlew assembleDebug
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The headset must be in developer mode and connected over USB. The application
+then appears in the headset's library under "Unknown sources". Logs go to
+`adb logcat`.
+
+Differences from desktop:
+
+- **Python comes with the APK.** The build downloads the Android package
+  of Python 3.15.2 from [python.org](https://www.python.org/downloads/release/python-3152/)
+  (`cmake/AndroidPython.cmake`), links its `libpython3.15.so` and packages its
+  standard library and `scripts/` as assets. At the first start they are
+  copied to the application's private directory. `print` goes to
+  `adb logcat` with the tag `python.stdout`.
+- **One script, two Pythons.** Desktop runs `scripts/app.py` with the Python
+  of the machine, the headset with 3.15: keep the script valid for both and
+  on the standard library (no pip package is in the APK).
+- **A script problem does not stop the application.** It is logged with the
+  tag `getting_started` and the host writes the status line itself
+  (`app::writeDefaultStatus` in `src/Frame.cpp`).
+- **No window settings.** The headset decides the resolution.
+- **VR by default.** For passthrough and hand tracking, see the comment in
+  `platforms/android/app/cpp/main.cpp`.
+
+See [platforms/android/README.md](platforms/android/README.md) for details.
 
 ## Tests
 

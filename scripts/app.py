@@ -1,10 +1,17 @@
 """Application script, run by the host through mais.
 
-The host (src/main.cpp) owns the window, the engine and the frame loop. It
-calls the functions below at fixed points of a session. Every function is
-optional: delete the ones you do not need.
+The host (platforms/desktop/main.cpp, or platforms/android/app/cpp/main.cpp
+on a headset) owns the window, the engine and the frame loop. It calls the
+functions below at fixed points of a session. Every function is optional:
+delete the ones you do not need.
 
-What a script can see is defined in src/scripting/Scripting.hpp and bound in
+The same script runs on desktop, with the Python installed on the machine
+(3.9 or newer), and on a headset, with the Python 3.15 packaged in the APK:
+keep it valid for both. On a headset, `print` goes to `adb logcat` (tag
+`python.stdout`) and the whole standard library is available except
+`tkinter`, `idlelib`, `venv` and `ensurepip`.
+
+What a script can see is defined in src/scripting/Services.hpp and bound in
 src/scripting/Scripting.cpp. Add fields and commands there.
 
 Keep hooks fast: they run on the main thread, inside the frame.
@@ -17,7 +24,7 @@ def configure(settings):
     """Propose the window settings, before the window exists.
 
     The host validates the proposal and falls back to its defaults when a
-    value is out of range.
+    value is out of range. A headset has no window: the proposal is ignored.
     """
     settings.window_title = "Getting started"
     settings.width = 1280

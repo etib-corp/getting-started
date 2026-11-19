@@ -95,24 +95,4 @@ namespace app::scripting
 											&borrowedReference<FrameContext>);
 	}
 
-	std::vector<std::string> validate(const Settings &settings)
-	{
-		std::vector<std::string> problems;
-
-		if (settings.windowTitle.empty()) {
-			problems.emplace_back("window_title must not be empty");
-		} else if (settings.windowTitle.size() > 64) {
-			problems.emplace_back("window_title must be at most 64 characters");
-		}
-		if (settings.width < 320 || settings.width > 7680) {
-			problems.emplace_back("width must be between 320 and 7680 (got "
-								  + std::to_string(settings.width) + ")");
-		}
-		if (settings.height < 240 || settings.height > 4320) {
-			problems.emplace_back("height must be between 240 and 4320 (got "
-								  + std::to_string(settings.height) + ")");
-		}
-		return problems;
-	}
-
 }	 // namespace app::scripting

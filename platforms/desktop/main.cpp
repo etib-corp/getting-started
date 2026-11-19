@@ -22,12 +22,13 @@
 
 /**
  * @file
- * @brief The host: start-up order and frame loop.
+ * @brief The desktop host: start-up order and frame loop.
  *
- * The three libraries meet here and nowhere else:
+ * The three libraries meet here:
  * - mais runs the Python hooks of scripts/app.py,
  * - evan opens the window and renders,
- * - guillaume owns the scenes and the widgets.
+ * - guillaume owns the scenes and the widgets (src/, shared with the Android
+ *   host in platforms/android).
  *
  * Order of a session:
  * 1. start Python and load the script,
@@ -38,7 +39,6 @@
  * 6. `on_shutdown(context)`, then stop Python.
  */
 
-#include <chrono>
 #include <cstdint>
 #include <cstdlib>
 #include <exception>
@@ -62,15 +62,14 @@
 	#include <evan/glfw/platform/WindowsPlatform.hpp>
 #endif
 
-#include <guillaume/application.hpp>
-
 #include <mais/ScriptRuntime.hpp>
 
 #include <utility/ressource_provider.hpp>
 #include <utility/system_io/default_system_io.hpp>
 
 #include "AppContext.hpp"
-#include "scenes/HomeScene.hpp"
+#include "Application.hpp"
+#include "Frame.hpp"
 #include "scripting/Scripting.hpp"
 
 namespace
@@ -238,8 +237,6 @@ namespace
 	 */
 	int runSession(mais::ScriptRuntime &runtime, app::Context &context)
 	{
-		using Clock = std::chrono::steady_clock;
-
 		app::scripting::Services &services = context.scripting;
 
 		utility::DefaultSystemIO systemIo;
@@ -247,10 +244,8 @@ namespace
 		auto engine	   = std::make_unique<evan::Engine>(
 			   resources, makePlatform(services.settings));
 
-		// List every scene of the application here; the first one is shown
-		// at start-up.
-		guillaume::Application<app::scenes::HomeScene> application(
-			resources, std::move(engine));
+		// The scenes are listed in src/Application.hpp.
+		app::Application application(resources, std::move(engine));
 
 		// A session whose start hook failed does not enter its loop.
 		const mais::CallReport started = runtime.callOptional(
@@ -264,18 +259,11 @@ namespace
 		}
 
 		const std::uint64_t frameLimit = readFrameLimit();
-		const Clock::time_point start  = Clock::now();
-		Clock::time_point previous	   = start;
-		std::string shownStatus;
+		std::uint64_t frames		   = 0;
+		app::FrameClock clock;
 
 		while (!application.shouldQuit() && !services.quitRequested) {
-			const Clock::time_point now = Clock::now();
-
-			services.frame.deltaSeconds =
-				std::chrono::duration<double>(now - previous).count();
-			services.frame.elapsedSeconds =
-				std::chrono::duration<double>(now - start).count();
-			previous = now;
+			clock.tick(services.frame);
 
 			// The script runs first, so what it writes is drawn this frame.
 			// ReportOnce prints the first failure of a streak and keeps the
@@ -286,20 +274,17 @@ namespace
 			if (updated) {
 				reportScriptError("on_update", updated.error);
 			}
-
-			if (context.showStatus && services.frame.status != shownStatus) {
-				shownStatus = services.frame.status;
-				context.showStatus(shownStatus);
-			}
+			app::presentStatus(context);
 
 			// One guillaume frame: events, layout, render, present.
 			application.routine();
 
-			++services.frame.index;
-			if (frameLimit != 0 && services.frame.index >= frameLimit) {
+			++frames;
+			if (frameLimit != 0 && frames >= frameLimit) {
 				break;
 			}
 		}
+		services.frame.index = frames;
 
 		// Continue: a failing shutdown hook never prevents the exit.
 		const mais::CallReport stopped = runtime.callOptional(

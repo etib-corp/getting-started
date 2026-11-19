@@ -25,8 +25,10 @@ engine or the UI about Python.
 - It does not create an engine, a window or a UI, and does not own the frame
   loop. The host calls the hooks where it wants them.
 - It knows nothing about evan or guillaume.
-- It does not package the application's scripts; `cmake/Runtime.cmake` copies
-  `scripts/` next to the executable.
+- It does not package the application's scripts or Python itself;
+  `cmake/Runtime.cmake` copies `scripts/` next to the executable, and the
+  Android build packages `scripts/` and the Python of python.org in the APK
+  (`cmake/AndroidPython.cmake`).
 - It does not expose widgets or the engine. Only what the host binds is
   reachable from Python.
 
@@ -42,7 +44,7 @@ engine or the UI about Python.
 
 ## How this application uses it
 
-Start-up, in `src/main.cpp`:
+Start-up, in `platforms/desktop/main.cpp`:
 
 1. `app::context()` is created first, then `mais::ScriptRuntime runtime`.
    The context outlives the runtime: Python keeps references to objects it
@@ -62,6 +64,11 @@ Start-up, in `src/main.cpp`:
    window and the scenes are destroyed when the frame loop returns, and
    `runtime.shutdown()` runs after that.
 
+The Android host (`platforms/android/app/cpp/main.cpp`) calls the same hooks
+at the same points. It first copies the Python standard library and the
+scripts out of the APK, and a script that fails to start does not stop the
+application there: see [platforms/android/README.md](../platforms/android/README.md#python).
+
 The script hooks are all optional and live in `scripts/app.py`:
 
 | Hook | When | What it receives |
@@ -73,9 +80,10 @@ The script hooks are all optional and live in `scripts/app.py`:
 
 `src/scripting/` is the adapter and the only code that includes pybind11:
 
-- `Scripting.hpp` declares the plain structures Python sees (`Settings`,
-  `FrameContext`, `Services`) and includes no pybind11 header, so the rest of
-  the application does not depend on it.
+- `Services.hpp` declares the plain structures Python sees (`Settings`,
+  `FrameContext`, `Services`) with the standard library only, so the scenes
+  can use them. `Scripting.hpp` declares the registration and argument
+  functions and includes no pybind11 header.
 - `Scripting.cpp` binds the `host` module: the `Settings` and `FrameContext`
   classes, and the `request_quit()` command. It wraps host objects with
   `mais::ScriptArgument::native()` and a borrowed reference, so the host keeps
@@ -92,8 +100,10 @@ That is the full round trip: widget, host, Python, host, widget.
 
 | File | Role |
 | --- | --- |
-| `src/main.cpp` | Starts and stops the runtime, calls the hooks at fixed points. |
-| `src/scripting/Scripting.hpp` | What Python can see, declared without pybind11. |
+| `platforms/desktop/main.cpp` | Starts and stops the runtime, calls the hooks at fixed points. |
+| `platforms/android/app/cpp/main.cpp` | The same on a headset. |
+| `src/scripting/Services.hpp` | What Python can see: plain structures. |
+| `src/scripting/Scripting.hpp` | The adapter's functions, declared without pybind11. |
 | `src/scripting/Scripting.cpp` | The only pybind11 code: the `host` module and the arguments. |
 | `scripts/app.py` | The hooks the host calls. |
 | `tests/ScriptingTest.cpp` | Checks each binding with `tests/scripts/fixture.py`. |
@@ -102,7 +112,7 @@ That is the full round trip: widget, host, Python, host, widget.
 
 The application pins a maïs commit on its `main` branch in
 `cmake/Dependencies.cmake`, because maïs has no release tag yet and the
-application needs `ScriptArgument::native()`. To move to a newer revision,
+application needs `ScriptArgument::native()` and Python 3.15. To move to a newer revision,
 change it there and rebuild; see "Update a library" in the
 [README](../README.md#update-a-library).
 

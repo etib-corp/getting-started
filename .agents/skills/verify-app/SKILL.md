@@ -1,6 +1,6 @@
 ---
 name: verify-app
-description: Build the application, run its tests and run it for a fixed number of frames to confirm a change works. Use after any change to src/, scripts/, cmake/ or CMakeLists.txt, and whenever asked to build, run, test or check the app.
+description: Build the desktop application, run its tests and run it for a fixed number of frames to confirm a change works. Use after any change to src/, platforms/desktop/, scripts/, cmake/ or CMakeLists.txt, and whenever asked to build, run, test or check the app.
 ---
 
 # Verify the application
@@ -11,7 +11,7 @@ Run the steps in order and stop at the first failure.
 
 ```sh
 cmake --preset default                       # only when build/ is missing or CMake files changed
-cmake --build --preset default --parallel 2>&1 | grep -E "error|Error [0-9]|Built target getting_started"
+cmake --build --preset default --parallel 8 2>&1 | grep -E "error|Error [0-9]|Built target getting_started"
 ```
 
 The first configure downloads the libraries and the first build compiles them
@@ -61,11 +61,15 @@ own widget gallery prints them too):
 ## 4. Before handing back
 
 ```sh
-cmake --preset default -DAPP_DEV_MODE=ON && cmake --build --preset default --parallel   # what CI builds
+cmake --preset default -DAPP_DEV_MODE=ON && cmake --build --preset default --parallel 8   # what CI builds
 ./tools/run-clang-format.sh        # needs clang-format 21.1.8
 ```
 
 Set `APP_DEV_MODE` back to `OFF` afterwards if it was off before.
+
+A change under `src/` or `cmake/` also affects the Android build, which this
+skill does not build: follow the `android-headset` skill, or say that the
+Android build was not checked.
 
 Report what ran and what was skipped. A click or another interaction cannot be
 checked this way: say that it was not exercised.

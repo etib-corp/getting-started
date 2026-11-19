@@ -4,13 +4,13 @@
 of the application. It opens the window, owns the Vulkan device and swapchain,
 loads shaders and meshes, and draws and presents a frame.
 
-This repository uses evan through its **GLFW desktop backend**. The build
-selects exactly one backend and one platform, and the application supports
-macOS, Linux and Windows.
+A build of evan has exactly one backend and one platform. This repository
+uses the **GLFW backend** on macOS, Linux and Windows, and the **OpenXR
+backend** on Android for Meta headsets.
 
 ## What it does
 
-- Opens a desktop window and routes keyboard, mouse and window events to the
+- Opens a desktop window, or an OpenXR session on a headset, and routes keyboard, mouse and window events to the
   application.
 - Owns the Vulkan instance, logical device, swapchain, per-frame command
   buffers and synchronisation.
@@ -32,35 +32,41 @@ macOS, Linux and Windows.
 | --- | --- |
 | **Engine** | Owns the Vulkan state and coordinates update, draw and present. |
 | **Platform** (`IPlatform`) | Abstraction of the window and input source. The application provides one implementation. |
-| **Backend** | How the platform is implemented. Here: GLFW. evan also has an OpenXR backend the application does not build. |
+| **Backend** | How the platform is implemented: GLFW on desktop, OpenXR on a headset. |
 | **Render object** | GPU content registered with the engine and drawn each frame. |
 | **Mesh, shader, material** | The description of renderable content. |
 
 ## How this application uses it
 
-- `src/main.cpp` includes `<evan/Engine.hpp>`, `<evan/IPlatform.hpp>` and the
+- `platforms/desktop/main.cpp` includes `<evan/Engine.hpp>`, `<evan/IPlatform.hpp>` and the
   platform header of the host OS.
 - `makePlatform()` builds `evan::MacOsDesktopPlatform`,
   `evan::LinuxDesktopPlatform` or `evan::WindowsPlatform` from the settings
   the script proposed. The title and size therefore reach evan through the
   host, after validation.
 - `runSession()` creates one `evan::Engine` on the shared
-  `utility::RessourceProvider`, then hands it to
-  `guillaume::Application<HomeScene>`. guillaume owns it from there.
+  `utility::RessourceProvider`, then hands it to `app::Application`
+  (`src/Application.hpp`). guillaume owns it from there.
+- `platforms/android/app/cpp/main.cpp` does the same with
+  `evan::AndroidXrPlatform`, reads the files from the APK assets and follows
+  the activity lifecycle.
 - `application.routine()` is the only place evan is asked to poll input,
   clear, draw and present. The application itself contains no Vulkan call.
 - `cmake/Dependencies.cmake` forces `BUILD_FOR_GLFW` and the platform flag of
   the host system (`BUILD_FOR_MACOS`, `BUILD_FOR_LINUX` or
-  `BUILD_FOR_WINDOWS`), and rejects any other system at configure time.
+  `BUILD_FOR_WINDOWS`), or `BUILD_FOR_OPENXR` and `BUILD_FOR_ANDROID`, and
+  rejects any other system at configure time.
 - `cmake/Runtime.cmake` copies the shaders, default texture and fonts next to
-  the executable, because they are loaded by relative path. A file placed
+  the executable, because they are loaded by relative path (the Android
+  build packages them as APK assets). A file placed
   under `assets/` at the same path replaces the library's one.
 
 ## Where the code lives
 
 | File | Role |
 | --- | --- |
-| `src/main.cpp` | Creates the platform and the engine, keeps the frame loop. |
+| `platforms/desktop/main.cpp` | Creates the platform and the engine, keeps the frame loop. |
+| `platforms/android/app/cpp/main.cpp` | The same on a headset, with OpenXR. |
 | `cmake/Dependencies.cmake` | Selects the backend and platform, pins the revision. |
 | `cmake/Runtime.cmake` | Copies shaders, textures and fonts to `build/bin/`. |
 | `assets/README.md` | Explains how to override a library asset. |

@@ -33,38 +33,18 @@ option(APP_ENABLE_GPU_TESTS
 
 include(cmake/Dependencies.cmake)
 
-# 03. Scripting adapter
+# 03. Shared application code (scenes, context, frame helpers) and the
+#     scripting adapter, the only code that includes pybind11
+
+add_subdirectory(src)
+
+# 04. Desktop application
 #
-# The only code that includes pybind11. It is a library of its own so the tests
-# can exercise the Python bindings without opening a window.
-
-add_library(${APP_NAME}_scripting STATIC
-    src/scripting/Scripting.cpp
-)
-
-target_include_directories(${APP_NAME}_scripting
-    PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
-target_link_libraries(${APP_NAME}_scripting
-    PUBLIC
-        mais
-    PRIVATE
-        pybind11::embed
-)
-
-# 04. Application
+# The Android application is a separate Gradle project that reuses src/ and
+# cmake/Dependencies.cmake: see platforms/android.
 
 add_executable(${APP_NAME}
-    src/main.cpp
-    src/AppContext.cpp
-    src/scenes/HomeScene.cpp
-)
-
-target_include_directories(${APP_NAME}
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
+    platforms/desktop/main.cpp
 )
 
 target_compile_definitions(${APP_NAME}
@@ -73,10 +53,15 @@ target_compile_definitions(${APP_NAME}
         APP_VERSION="${PROJECT_VERSION}"
 )
 
+# MSVC reports std::getenv as unsafe, which APP_DEV_MODE turns into an error.
+if(MSVC)
+    target_compile_definitions(${APP_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 target_link_libraries(${APP_NAME}
     PRIVATE
+        ${APP_NAME}_core
         ${APP_NAME}_scripting
-        guillaume
         evan
 )
 

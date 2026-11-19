@@ -55,10 +55,66 @@ jobs:
           -DPython_EXECUTABLE="${{ steps.python.outputs.python-path }}"
           -DAPP_DEV_MODE=ON
 
+      # A job count is required: with Makefiles, a bare --parallel starts
+      # every compilation at once and the runner runs out of memory.
       - name: Build
-        run: cmake --build --preset default --parallel
+        run: cmake --build --preset default --parallel 4
 
       # Only the tests that need no window run here: the runners have no
       # display and no Vulkan driver.
       - name: Run tests
         run: ctest --preset default
+
+  # The APK for Meta headsets. It is built, not run: the runners have no
+  # headset.
+  android:
+    name: Android
+    runs-on: ubuntu-latest
+    env:
+      JAVA_VERSION: 21
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v6.0.2
+
+      - name: Setup JDK
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+
+      # Gradle downloads the NDK by itself, but not CMake: install the version
+      # named in platforms/android/app/build.gradle.kts.
+      - name: Install the SDK's CMake
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "cmake;3.31.5"
+
+      - name: Build the debug APK
+        working-directory: platforms/android
+        run: ./gradlew assembleDebug --stacktrace
+
+      - name: Check the APK contents
+        working-directory: platforms/android
+        run: |
+          apk=app/build/outputs/apk/debug/app-debug.apk
+          unzip -l "$apk" > apk-contents.txt
+          for entry in \
+            lib/arm64-v8a/libgetting_started_android.so \
+            lib/arm64-v8a/libopenxr_loader.so \
+            'lib/arm64-v8a/libpython3\.[0-9]*\.so' \
+            lib/arm64-v8a/libssl_python.so \
+            'assets/python/lib/python3\.[0-9]*/manifest.txt' \
+            'assets/python/lib/python3\.[0-9]*/encodings/__init__.py' \
+            assets/scripts/manifest.txt \
+            assets/scripts/app.py \
+            assets/shaders/default.vert.spv \
+            assets/fonts/Roboto-Regular.ttf \
+            assets/textures/default_texture.png
+          do
+            grep -q "$entry" apk-contents.txt || { echo "Missing in APK: $entry"; exit 1; }
+          done
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: getting-started-debug-apk
+          path: platforms/android/app/build/outputs/apk/debug/app-debug.apk

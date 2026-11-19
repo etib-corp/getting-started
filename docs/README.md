@@ -1,18 +1,20 @@
 # The libraries behind the application
 
 The application is assembled from three XIDER libraries. None of them knows
-about the others: `src/main.cpp` is the only place where they meet, and it
-decides the order in which they are started, called and stopped.
+about the others: a platform host is the only place where they meet, and it
+decides the order in which they are started, called and stopped. There are
+two hosts: `platforms/desktop/main.cpp` and, for Meta headsets,
+`platforms/android/app/cpp/main.cpp`. Everything else is shared, in `src/`.
 
 | Library | What it does | Read more |
 | --- | --- | --- |
-| [evan](https://github.com/etib-corp/evan) | Opens the window and renders with Vulkan, through its GLFW desktop backend. | [evan.md](evan.md) |
+| [evan](https://github.com/etib-corp/evan) | Renders with Vulkan: a GLFW window on desktop, OpenXR on a headset. | [evan.md](evan.md) |
 | [guillaume](https://github.com/etib-corp/guillaume) | UI framework: application shell, scenes, widgets, layout, events, theme and storage. | [guillaume.md](guillaume.md) |
 | [maïs](https://github.com/etib-corp/mais) | Embedded Python runtime: interpreter lifecycle, script loading, hooks and host bindings. | [mais.md](mais.md) |
 
 Each page covers the same ground: what the library does on its own, what it
 deliberately leaves to the others, which parts this application uses, and
-where they appear in `src/`.
+where they appear in the code.
 
 ## How they fit together
 
@@ -20,9 +22,9 @@ where they appear in `src/`.
 flowchart TD
     script["scripts/app.py<br/>configure, on_start, on_update, on_shutdown"]
     runtime["maïs<br/>runs Python, exposes the host module"]
-    host["src/main.cpp<br/>owns the order, the frame loop and app::Context"]
+    host["platform host (main.cpp)<br/>owns the order, the frame loop and app::Context"]
     ui["guillaume<br/>scenes, widgets, layout"]
-    engine["evan<br/>window, input, Vulkan draw and present"]
+    engine["evan<br/>window or headset, input, Vulkan draw and present"]
 
     script -->|hooks| runtime
     runtime -->|callOptional| host
@@ -33,7 +35,7 @@ flowchart TD
 
 The libraries are stacked, not coupled: maïs hands the script plain values,
 guillaume calls the engine it was given, and evan knows nothing about either.
-`src/main.cpp` fills the gaps between them.
+The host fills the gaps between them.
 
 ## A session, in order
 
@@ -48,6 +50,9 @@ guillaume calls the engine it was given, and evan knows nothing about either.
 6. The script receives `on_shutdown` at the end of the session. The window
    and the scenes are destroyed when the host leaves its loop, and Python
    stops last.
+
+On a headset the order is the same, with OpenXR instead of a window: the
+proposal of step 2 is validated but not used.
 
 The full walkthrough is in the
 [top-level README](../README.md#how-a-session-runs).

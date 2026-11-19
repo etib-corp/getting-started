@@ -27,7 +27,7 @@ The revisions are the four `APP_*_REVISION` variables at the top of
    windowed run: a shader or font mismatch only shows at run time.
 
    ```sh
-   cmake --preset default && cmake --build --preset default --parallel
+   cmake --preset default && cmake --build --preset default --parallel 8
    ```
 
 ## Things that move together
@@ -38,14 +38,21 @@ The revisions are the four `APP_*_REVISION` variables at the top of
   revision of utility's `main` at the date of the library's release.
 - **Shaders and fonts** are copied from guillaume's
   `examples/evan/assets` and `fonts/` at the pinned revision
-  (`cmake/Runtime.cmake`). If guillaume moves those directories, update the
-  paths there. If evan changes its shaders and guillaume's copy lags, the
-  window opens and draws nothing or reports pipeline errors.
+  (`cmake/EngineAssets.cmake`, used by the desktop and Android builds). If
+  guillaume moves those directories, update the paths there. If evan changes
+  its shaders and guillaume's copy lags, the window opens and draws nothing or reports pipeline errors.
 - **mais and pybind11**: mais selects the pybind11 version and the supported
   Python range. A configure error naming the Python version comes from mais.
+- **Python on Android**: `cmake/AndroidPython.cmake` pins the python.org
+  Android package (version and one SHA-256 per ABI, from the "Files" table
+  of the release page). The Python series must be in the supported range of
+  the pinned mais, which also selects a pybind11 that supports it.
 - **CMake options**: the three libraries share option names (`BUILD_TESTING`,
   `BUILD_EXAMPLES`, `DEV_MODE`, ...). `cmake/Dependencies.cmake` forces the
   shared ones off. Check a new library version for new shared options.
+- **Android**: the same revisions are used by the Android build, with evan's
+  OpenXR backend. A bump can break only that build; check it with the
+  `android-headset` skill or CI.
 
 ## Do not
 

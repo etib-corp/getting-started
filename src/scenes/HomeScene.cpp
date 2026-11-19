@@ -63,7 +63,7 @@ namespace app::scenes
 			_page, "Getting started", theme::TypeRole::HeadlineMedium,
 			guillaume::getActiveColor(SchemeColorRole::OnSurface));
 		auto subtitle = textBuilder.makeText(
-			_page, "evan renders, guillaume lays out, mais runs scripts/app.py",
+			_page, "A starter built on evan, guillaume and mais",
 			theme::TypeRole::BodyLarge,
 			guillaume::getActiveColor(SchemeColorRole::OnSurfaceVariant));
 		_status = textBuilder.makeText(
@@ -87,6 +87,7 @@ namespace app::scenes
 		context().showStatus = [this](const std::string &status) {
 			_status->setContent(status);
 		};
+		context().shownStatus.clear();
 	}
 
 	void HomeScene::onExit(void)

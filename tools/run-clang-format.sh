@@ -14,7 +14,8 @@ echo "Formatting C++ files in $ROOT_DIR..."
 
 find "$ROOT_DIR" -type f \( -name "*.cpp" -o -name "*.hpp" \) \
     -not -path "*/.git/*" \
-    -not -path "*/build/*" \
+    -not -path "*/build*/*" \
+    -not -path "*/.cxx/*" \
     -not -path "*/cmake_build/*" \
     -not -path "*/third_party/*" \
     -print0 |

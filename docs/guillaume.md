@@ -43,10 +43,11 @@ engine's job. In this repository that engine is evan.
 
 ## How this application uses it
 
-- `src/main.cpp` declares
-  `guillaume::Application<app::scenes::HomeScene> application(resources,
-  std::move(engine))`. The template lists every scene of the application; the
-  first is shown at start-up. The engine passed in is evan's.
+- `src/Application.hpp` names `app::Application`, a
+  `guillaume::Application<...>` whose template lists every scene of the
+  application; the first is shown at start-up. Each host constructs it with
+  `application(resources, std::move(engine))`. The engine passed in is
+  evan's.
 - The host loop calls `application.shouldQuit()` and `application.routine()`
   once per iteration. `routine()` polls input, publishes the events, runs the
   four phases on the active scene, resets the changed flags, performs a
@@ -72,7 +73,8 @@ engine's job. In this repository that engine is evan.
 | --- | --- |
 | `src/scenes/HomeScene.hpp` | The start-up scene, its widgets and its lifecycle overrides. |
 | `src/scenes/HomeScene.cpp` | Builds the column, the texts and the button; registers `showStatus`. |
-| `src/main.cpp` | Lists the scenes in `guillaume::Application` and runs `routine()`. |
+| `src/Application.hpp` | Lists the scenes in `guillaume::Application`. |
+| `platforms/desktop/main.cpp`, `platforms/android/app/cpp/main.cpp` | Construct the application and run `routine()`. |
 | `src/AppContext.hpp` | The state a scene and the host share. |
 
 ## Version

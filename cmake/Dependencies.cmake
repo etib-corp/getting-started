@@ -20,24 +20,51 @@ set(APP_UTILITY_REVISION   dde6d86ad13972f208a1cdb90058bfd9f1a132d3)
 set(APP_EVAN_REVISION      v2026.4.7)
 # guillaume 2026.6.1 (the revision has no tag yet).
 set(APP_GUILLAUME_REVISION 15a2426dfa7892823126cfc6eb653d81f06fd093)
-# mais has no release tag yet. The application needs ScriptArgument::native(),
-# which is on main.
-set(APP_MAIS_REVISION      bddc4f1b6dcc142f3d0295ab8b36174db3f1db5c)
+# mais has no release tag yet. The application needs ScriptArgument::native()
+# and Python 3.15 (the Android build embeds it), which are on main.
+set(APP_MAIS_REVISION      36943a5456018a81ed4f9a7ef3a085cbbf2cca03)
 
-# evan builds exactly one backend and one platform. The application is a
-# desktop one: GLFW, on the platform of the host.
-set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
-if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+# evan builds exactly one backend and one platform: GLFW on a desktop host,
+# OpenXR on Android (Meta headsets).
+foreach(app_evan_option
+    BUILD_FOR_GLFW BUILD_FOR_OPENXR
+    BUILD_FOR_MACOS BUILD_FOR_LINUX BUILD_FOR_WINDOWS BUILD_FOR_ANDROID
+)
+    set(${app_evan_option} OFF CACHE BOOL "" FORCE)
+endforeach()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    set(BUILD_FOR_OPENXR ON CACHE BOOL "" FORCE)
+    set(BUILD_FOR_ANDROID ON CACHE BOOL "" FORCE)
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
     set(BUILD_FOR_MACOS ON CACHE BOOL "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
     set(BUILD_FOR_LINUX ON CACHE BOOL "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
     set(BUILD_FOR_WINDOWS ON CACHE BOOL "" FORCE)
 else()
     message(FATAL_ERROR
-        "${APP_NAME} supports macOS, Linux and Windows "
+        "${APP_NAME} supports macOS, Linux, Windows and Android "
         "(got ${CMAKE_SYSTEM_NAME})."
     )
+endif()
+
+# Python scripting is built everywhere. The desktop build embeds the Python
+# installed on the machine; the Android build embeds the package published on
+# python.org, which has to be set up before mais looks for Python.
+if(CMAKE_SYSTEM_NAME STREQUAL "Android")
+    include(${CMAKE_CURRENT_LIST_DIR}/AndroidPython.cmake)
+endif()
+
+# Workaround for https://github.com/etib-corp/evan/issues/183 and
+# https://github.com/etib-corp/utility/issues/131: both libraries force the
+# release MSVC runtime in every configuration. Use the same one everywhere, or
+# a Debug build fails to link (LNK2038). Remove once both issues are closed.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
 endif()
 
 # The libraries are consumed as libraries only: their tests, examples,
@@ -76,6 +103,8 @@ FetchContent_Declare(guillaume
     SYSTEM
 )
 
+FetchContent_MakeAvailable(utility evan guillaume)
+
 FetchContent_Declare(mais
     GIT_REPOSITORY https://github.com/etib-corp/mais.git
     GIT_TAG ${APP_MAIS_REVISION}
@@ -83,8 +112,7 @@ FetchContent_Declare(mais
     EXCLUDE_FROM_ALL
     SYSTEM
 )
-
-FetchContent_MakeAvailable(utility evan guillaume mais)
+FetchContent_MakeAvailable(mais)
 
 set(BUILD_TESTING ${APP_BUILD_TESTING} CACHE BOOL "" FORCE)
 

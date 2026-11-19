@@ -1,0 +1,13 @@
+*.iml
+.gradle
+.idea
+.kotlin
+local.properties
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+# Written by Android Studio for the machine's JDK
+/gradle/gradle-daemon-jvm.properties
