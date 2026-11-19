@@ -25,6 +25,9 @@ own.
   and Ubuntu; included in the python.org, Homebrew and Xcode installations)
 - On Linux, the window-system packages:
   `bash tools/install_ubuntu_dependencies.sh`
+- On Windows, [docs/windows.md](docs/windows.md) has the commands for the
+  compiler, CMake, Git, Python and the Vulkan SDK, and explains what the build
+  does differently there.
 
 ## Build and run
 
@@ -38,8 +41,10 @@ The first configure fetches evan, guillaume, maïs and their dependencies, and
 the first build compiles them: allow a few minutes. Later builds only compile
 what you change.
 
-The executable is `build/bin/getting_started`. It can be started from any
-directory.
+The executable is `build/bin/getting_started`
+(`build\bin\Debug\getting_started.exe` with the Visual Studio generator, which
+adds the configuration to the path). It can be started from any directory, as
+long as the Python installation stays on `PATH` on Windows.
 
 Run the tests with:
 
@@ -60,7 +65,8 @@ src/
   AppContext.hpp          state shared by the frame loop and the scenes
   scenes/HomeScene.cpp    the start-up scene: build your UI here
   scripting/Scripting.*   what Python can see of the application
-docs/                     one page per library: what it does and where we use it
+docs/                     one page per library: what it does and where we use it,
+                          plus docs/windows.md for the Windows setup
 scripts/app.py            the Python hooks
 assets/                   your models, images and textures
 tests/                    tests that run without a window
@@ -202,8 +208,12 @@ git config core.hooksPath .githooks
 
 ## Troubleshooting
 
-- **`Could NOT find Vulkan`**: install the Vulkan SDK and, on macOS and
-  Windows, run its environment script (or set `VULKAN_SDK`) before configuring.
+- **`Could NOT find Vulkan`**: install the Vulkan SDK and set `VULKAN_SDK`
+  before configuring. Recent Windows SDKs no longer ship a script that sets
+  it; [docs/windows.md](docs/windows.md) has the two lines.
+- **Windows will not start the executable, "blocked by your organization's
+  Device Guard policy"**: Smart App Control blocks freshly built, unsigned
+  binaries and has no exclusion list. See the Windows page.
 - **`Could NOT find Python` or a missing `Python.h`**: install the Python
   development files, or select an interpreter with
   `-DPython_EXECUTABLE="$(command -v python3)"`.

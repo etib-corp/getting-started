@@ -57,3 +57,6 @@ The full walkthrough is in the
 Start with [evan.md](evan.md) for the bottom layer, then
 [guillaume.md](guillaume.md) for the scenes and widgets, then
 [mais.md](mais.md) for the script.
+
+[windows.md](windows.md) is the odd one out: it is not about a library, it
+lists what to install on a Windows computer and how the build adapts to it.
