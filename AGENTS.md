@@ -39,7 +39,7 @@ without a person closing the window.
   that includes pybind11.
 - `src/AppContext.*` — state shared by the host loop and the scenes.
 - `docs/` — one page per library, explaining what it does and where the
-  application uses it.
+  application uses it, plus `windows.md` for the Windows setup.
 - `scripts/` — Python run by the application. Shell scripts go in `tools/`.
 - `assets/` — application assets, copied next to the executable.
 
