@@ -7,7 +7,7 @@
 # To work on a library and the application together, point CMake at a local
 # checkout instead of the pinned revision:
 #
-#   cmake --preset default -DFETCHCONTENT_SOURCE_DIR_GUILLAUME=/path/to/guillaume
+# cmake --preset default -DFETCHCONTENT_SOURCE_DIR_GUILLAUME=/path/to/guillaume
 #
 # The `siblings` preset does this for evan, guillaume and mais checked out next
 # to this repository.
@@ -16,17 +16,20 @@ include(FetchContent)
 
 # evan and guillaume both build against utility's main branch. It is declared
 # first so that this revision is the one they both get.
-set(APP_UTILITY_REVISION   dde6d86ad13972f208a1cdb90058bfd9f1a132d3)
-set(APP_EVAN_REVISION      v2026.4.7)
+set(APP_UTILITY_REVISION dde6d86ad13972f208a1cdb90058bfd9f1a132d3)
+set(APP_EVAN_REVISION v2026.4.7)
+
 # guillaume 2026.6.1 (the revision has no tag yet).
 set(APP_GUILLAUME_REVISION 15a2426dfa7892823126cfc6eb653d81f06fd093)
+
 # mais has no release tag yet. The application needs ScriptArgument::native(),
 # which is on main.
-set(APP_MAIS_REVISION      bddc4f1b6dcc142f3d0295ab8b36174db3f1db5c)
+set(APP_MAIS_REVISION bddc4f1b6dcc142f3d0295ab8b36174db3f1db5c)
 
 # evan builds exactly one backend and one platform. The application is a
 # desktop one: GLFW, on the platform of the host.
 set(BUILD_FOR_GLFW ON CACHE BOOL "" FORCE)
+
 if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(BUILD_FOR_MACOS ON CACHE BOOL "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
@@ -37,6 +40,27 @@ else()
     message(FATAL_ERROR
         "${APP_NAME} supports macOS, Linux and Windows "
         "(got ${CMAKE_SYSTEM_NAME})."
+    )
+endif()
+
+# Windows: two settings the pinned revisions force on what they build have to
+# be matched here, or a Debug build of the application does not link.
+#
+# - utility and evan set CMAKE_MSVC_RUNTIME_LIBRARY to MultiThreadedDLL in
+# their cmake/ConfigWindows.cmake, in every configuration. The application
+# keeps CMake's per-configuration default and would be built with /MDd in
+# Debug: https://github.com/etib-corp/utility/issues/131 and
+# https://github.com/etib-corp/evan/issues/183.
+# - utility's vendored OpenAL Soft enables C++20 modules for the Visual Studio
+# generator, which MSBuild cannot build ("error C2230: could not find module
+# 'alc.context'"): https://github.com/etib-corp/utility/issues/132.
+#
+# Both problems belong to the libraries; until they are fixed, the two
+# settings below keep a fresh checkout buildable on Windows.
+if(MSVC)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    set(ALSOFT_ENABLE_MODULES OFF CACHE BOOL "Use C++20 modules in OpenAL Soft"
+        FORCE
     )
 endif()
 
