@@ -32,7 +32,7 @@ from where the symptom shows.
   that is unclear, file it on the consumer of the two and say so.
 - When the cause is not established, file it on `etib-corp/getting-started`
   with what is known, and say that the cause is not confirmed.
-- pybind11, GLFW, Vulkan and other third-party code: file it on the ETIB
+- pybind11, GLFW, Vulkan and other third-party code: file it on the XIDER
   library that uses them, not upstream.
 
 ## 2. Check it is not already reported

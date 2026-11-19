@@ -2,7 +2,7 @@
 
 ## Repository purpose
 
-A starter application that wires three ETIB libraries together: evan (Vulkan
+A starter application that wires three XIDER libraries together: evan (Vulkan
 rendering; GLFW on desktop, OpenXR on Meta headsets), guillaume (UI framework)
 and maïs (embedded Python scripting). It is an application, not a library:
 nothing here is installed or exported.
@@ -54,6 +54,8 @@ without a person closing the window.
     sees.
 - `src/scripting/Scripting.*` — the adapter between a host and Python. The
   only code that includes pybind11; built for both hosts.
+- `docs/` — one page per library, explaining what it does and where the
+  application uses it.
 - `scripts/` — Python run by the application, on desktop and on the headset
   (packaged in the APK). Shell scripts go in `tools/`.
 - `assets/` — application assets, copied next to the executable.

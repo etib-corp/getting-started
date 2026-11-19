@@ -1,13 +1,17 @@
 # Getting started
 
-A ready-to-develop application built on the three ETIB libraries. It runs on
+A ready-to-develop application built on the three XIDER libraries. It runs on
 desktop (macOS, Linux, Windows) and on Meta headsets (Android, OpenXR):
 
-| Library | Role in the application |
-| --- | --- |
-| [evan](https://github.com/etib-corp/evan) | Renders with Vulkan: a GLFW window on desktop, OpenXR on a headset. |
-| [guillaume](https://github.com/etib-corp/guillaume) | UI framework: scenes, widgets, layout, events, theme, storage. |
-| [maïs](https://github.com/etib-corp/mais) | Runs the application's Python scripts (embedded through pybind11), on desktop and on a headset. |
+| Library | What it does | In this application | Read more |
+| --- | --- | --- | --- |
+| [evan](https://github.com/etib-corp/evan) | Renders with Vulkan: a GLFW window on desktop, OpenXR on a headset. | Creates the window or the headset session, and the engine guillaume draws through. | [docs/evan.md](docs/evan.md) |
+| [guillaume](https://github.com/etib-corp/guillaume) | UI framework: application shell, scenes, widgets, layout, events, theme and storage. | Owns the frame and the `HomeScene` widgets. | [docs/guillaume.md](docs/guillaume.md) |
+| [maïs](https://github.com/etib-corp/mais) | Embedded Python runtime: interpreter lifecycle, script loading, hooks and host bindings. | Runs `scripts/app.py` and exposes the `host` module, on desktop and on a headset. | [docs/mais.md](docs/mais.md) |
+
+Each page explains what the library does on its own, what it leaves to the
+others, which parts the application uses and where they appear in the code.
+[docs/README.md](docs/README.md) shows how the three fit together.
 
 Clone it, build it, and you get a window with a few widgets and a Python
 script driving one of them. Then replace the scene and the script with your
@@ -66,6 +70,7 @@ src/                      code shared by every platform
 platforms/
   desktop/main.cpp        the desktop host: start-up order and frame loop
   android/                the Gradle project for Meta headsets
+docs/                     one page per library: what it does and where we use it
 scripts/app.py            the Python hooks
 assets/                   your models, images and textures
 tests/                    tests that run without a window
@@ -92,6 +97,9 @@ In the sample, the button increments `context.clicks`, the script reads it in
 `on_update` and writes `context.status`, and the host shows that text in the
 window. This is the full round trip: widget, host, Python, host, widget.
 
+The same sequence, library by library, is in
+[docs/README.md](docs/README.md).
+
 A failing `on_update` is printed once with its Python traceback and the window
 stays open.
 
@@ -108,7 +116,9 @@ host writes the status line itself.
 Edit `HomeScene::onEnter()` in `src/scenes/HomeScene.cpp`. Each widget has a
 builder under `guillaume/entities/`. The
 [widget gallery](https://github.com/etib-corp/guillaume/tree/main/examples/evan)
-shows every widget with the code that creates it.
+shows every widget with the code that creates it. See
+[docs/guillaume.md](docs/guillaume.md) for how guillaume builds, lays out and
+themes them.
 
 ### Add a scene
 
@@ -130,7 +140,9 @@ shows every widget with the code that creates it.
 4. Add a check in `tests/ScriptingTest.cpp`.
 
 Scripts receive plain values, never the engine or a widget. A command sets a
-flag that the host reads; it does not act by itself. See maïs's
+flag that the host reads; it does not act by itself. See
+[docs/mais.md](docs/mais.md) for the runtime, the hooks and the ownership
+rules, and maïs's
 [host integration guide](https://github.com/etib-corp/mais/blob/main/docs/HOST_INTEGRATION.md)
 for the reasons.
 
