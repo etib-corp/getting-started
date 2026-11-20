@@ -15,6 +15,18 @@ add_library(${APP_NAME}_core STATIC
     AppContext.cpp
     Frame.cpp
     scenes/HomeScene.cpp
+    scenes/gallery/Page.cpp
+    scenes/gallery/ButtonsPage.cpp
+    scenes/gallery/SelectionPage.cpp
+    scenes/gallery/TextPage.cpp
+    scenes/gallery/ContainersPage.cpp
+    scenes/gallery/ListsPage.cpp
+    scenes/gallery/FeedbackPage.cpp
+    scenes/gallery/NavigationPage.cpp
+    scenes/gallery/DrawerPage.cpp
+    scenes/gallery/MeshPage.cpp
+    scenes/gallery/ThemePage.cpp
+    scenes/gallery/StoragePage.cpp
 )
 
 target_include_directories(${APP_NAME}_core
@@ -42,6 +54,12 @@ target_link_libraries(${APP_NAME}_scripting
     PRIVATE
         pybind11::embed
 )
+
+# MSVC reports std::getenv (HomeScene.cpp) as unsafe, which APP_DEV_MODE
+# turns into an error.
+if(MSVC)
+    target_compile_definitions(${APP_NAME}_core PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
 
 if(APP_DEV_MODE)
     if(MSVC)

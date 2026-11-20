@@ -50,6 +50,13 @@ backend** on Android for Meta headsets.
 - `platforms/android/app/cpp/main.cpp` does the same with
   `evan::AndroidXrPlatform`, reads the files from the APK assets and follows
   the activity lifecycle.
+- `runSession()` also applies the engine settings the script proposed:
+  `msaa_samples` becomes `evan::RenderSettings::msaaSamples` when the engine
+  is created, `target_fps` goes to `Engine::setTargetFps()` and
+  `camera_controls` to `Engine::setShouldCaptureViewportInput()`.
+- `reportEngine()`, run with `--engine-report`, prints what the engine
+  reports about itself: delta time, batching switches, last error,
+  statistics window and AR capability (unsupported on desktop).
 - `application.routine()` is the only place evan is asked to poll input,
   clear, draw and present. The application itself contains no Vulkan call.
 - `cmake/Dependencies.cmake` forces `BUILD_FOR_GLFW` and the platform flag of

@@ -48,12 +48,19 @@ without a person closing the window.
   from `src/scripting/Scripting.*`, it depends on guillaume only.
   - `src/Application.hpp` — the list of scenes.
   - `src/scenes/` — guillaume scenes. UI code only.
+  - `src/scenes/gallery/` — the widget gallery: one scene and one file per
+    family of widgets, listed in `GalleryPages.hpp`. When a widget is added
+    to guillaume, show it on the page of its family.
   - `src/AppContext.*`, `src/Frame.*` — state and per-frame helpers shared by
     the hosts and the scenes.
   - `src/scripting/Services.hpp` — the plain state the hosts fill and Python
     sees.
 - `src/scripting/Scripting.*` — the adapter between a host and Python. The
   only code that includes pybind11; built for both hosts.
+- `platforms/desktop/ScriptingTour.*` — the tour of the mais runtime
+  (`--scripting-tour`, test `scripting.tour`), with `scripts/features.py`.
+  One block per runtime feature; add a block when the application starts
+  using a new part of the mais API.
 - `docs/` — one page per library, explaining what it does and where the
   application uses it.
 - `scripts/` — Python run by the application, on desktop and on the headset

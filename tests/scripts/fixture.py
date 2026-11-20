@@ -7,6 +7,9 @@ def configure(settings):
     settings.window_title = "fixture"
     settings.width = 640
     settings.height = 480
+    settings.target_fps = 30
+    settings.msaa_samples = 4
+    settings.camera_controls = False
 
 
 def on_update(context):

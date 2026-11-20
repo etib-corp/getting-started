@@ -37,10 +37,17 @@
  * 4. `on_start(context)`,
  * 5. each frame: `on_update(context)`, then one guillaume frame,
  * 6. `on_shutdown(context)`, then stop Python.
+ *
+ * Two command-line options show the libraries at work:
+ * - `--scripting-tour` runs ScriptingTour.cpp instead of the application:
+ *   one check per feature of the mais runtime, without a window;
+ * - `--engine-report` prints what evan's engine reports after 120 frames
+ *   (see reportEngine()).
  */
 
 #include <cstdint>
 #include <cstdlib>
+#include <cstring>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -52,7 +59,10 @@
 #include <vector>
 
 #include <evan/Engine.hpp>
+#include <evan/Error.hpp>
+#include <evan/FrameStats.hpp>
 #include <evan/IPlatform.hpp>
+#include <evan/RenderSettings.hpp>
 
 #if defined(__APPLE__)
 	#include <evan/glfw/platform/MacOsDesktopPlatform.hpp>
@@ -70,6 +80,7 @@
 #include "AppContext.hpp"
 #include "Application.hpp"
 #include "Frame.hpp"
+#include "ScriptingTour.hpp"
 #include "scripting/Scripting.hpp"
 
 namespace
@@ -126,6 +137,75 @@ namespace
 #else
 	#error "Unsupported platform: evan's GLFW backend is desktop only"
 #endif
+	}
+
+	/**
+	 * @brief Turn the validated settings into evan's render settings.
+	 *
+	 * The sample count is fixed when the engine is created; evan falls back
+	 * to a count the device supports.
+	 * @param settings The validated settings.
+	 * @return The render settings of the engine.
+	 */
+	evan::RenderSettings
+		makeRenderSettings(const app::scripting::Settings &settings)
+	{
+		evan::RenderSettings renderSettings;
+
+		// VkSampleCountFlagBits values are the sample counts themselves.
+		renderSettings.msaaSamples =
+			static_cast<VkSampleCountFlagBits>(settings.msaaSamples);
+		return renderSettings;
+	}
+
+	/**
+	 * @brief Print what the engine reports about itself (`--engine-report`).
+	 *
+	 * Shows the parts of evan's API a host can query: frame time, frame rate
+	 * limit, batching switches, last error, the statistics window and the
+	 * AR capability. On desktop AR is unsupported: enabling it is refused
+	 * and changes nothing.
+	 * @param engine The running engine.
+	 */
+	void reportEngine(evan::Engine &engine)
+	{
+		const evan::Error arResult = engine.setAREnabled(true);
+
+		std::cout << std::boolalpha << "[" APP_NAME "] engine report\n"
+				  << "  delta time: " << engine.getDeltaTime() << " s\n"
+				  << "  target fps: " << engine.getTargetFps()
+				  << " (0 = paced by the display)\n"
+				  << "  camera controls: "
+				  << engine.shouldCaptureViewportInput() << "\n"
+				  << "  instancing: " << engine.isInstancingEnabled()
+				  << ", indirect drawing: " << engine.isIndirectDrawingEnabled()
+				  << "\n"
+				  << "  last error is Ok: " << evan::isOk(engine.getLastError())
+				  << "\n"
+				  << "  frames in the statistics window: "
+				  << engine.getFrameStats().frames
+				  << " (counted when EVAN_STATS=1)\n"
+				  << "  AR supported: " << engine.isARSupported()
+				  << ", setAREnabled(true) refused as unsupported: "
+				  << (arResult == evan::Error::Unsupported)
+				  << ", AR enabled: " << engine.isAREnabled() << std::endl;
+	}
+
+	/**
+	 * @brief Tell whether an option is on the command line.
+	 * @param argc Number of arguments.
+	 * @param argv The arguments.
+	 * @param option The option, for example "--engine-report".
+	 * @return True when one argument equals the option.
+	 */
+	bool hasOption(int argc, char **argv, const char *option)
+	{
+		for (int index = 1; index < argc; ++index) {
+			if (std::strcmp(argv[index], option) == 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -233,16 +313,28 @@ namespace
 	 * @brief Run the window and the frame loop until the user quits.
 	 * @param runtime The running script runtime.
 	 * @param context The shared application context.
+	 * @param engineReport Print reportEngine() after 120 frames.
 	 * @return The process exit code.
 	 */
-	int runSession(mais::ScriptRuntime &runtime, app::Context &context)
+	int runSession(mais::ScriptRuntime &runtime, app::Context &context,
+				   bool engineReport)
 	{
 		app::scripting::Services &services = context.scripting;
 
 		utility::DefaultSystemIO systemIo;
 		auto resources = std::make_shared<utility::RessourceProvider>(systemIo);
 		auto engine	   = std::make_unique<evan::Engine>(
-			   resources, makePlatform(services.settings));
+			   resources, makePlatform(services.settings),
+			   makeRenderSettings(services.settings));
+
+		// The engine settings the script proposed in configure(). guillaume
+		// owns the engine from the next statement on; the pointer stays
+		// valid as long as the application.
+		evan::Engine *evanEngine = engine.get();
+		evanEngine->setTargetFps(
+			static_cast<float>(services.settings.targetFps));
+		evanEngine->setShouldCaptureViewportInput(
+			services.settings.cameraControls);
 
 		// The scenes are listed in src/Application.hpp.
 		app::Application application(resources, std::move(engine));
@@ -280,6 +372,9 @@ namespace
 			application.routine();
 
 			++frames;
+			if (engineReport && frames == 120) {
+				reportEngine(*evanEngine);
+			}
 			if (frameLimit != 0 && frames >= frameLimit) {
 				break;
 			}
@@ -298,20 +393,26 @@ namespace
 
 }	 // namespace
 
-int main(int, char **argv)
+int main(int argc, char **argv)
 {
 	enterRuntimeDirectory(argv[0]);
 
 	// The context is created before the runtime and outlives it: Python
 	// borrows the objects it holds.
 	app::Context &context = app::context();
+
+	// The tour starts its own runtime, and a process has only one.
+	if (hasOption(argc, argv, "--scripting-tour")) {
+		return app::desktop::runScriptingTour(context.scripting);
+	}
 	mais::ScriptRuntime runtime;
 	int exitCode = EXIT_FAILURE;
 
 	if (startScripting(runtime, context.scripting)
 		&& configure(runtime, context.scripting.settings)) {
 		try {
-			exitCode = runSession(runtime, context);
+			exitCode = runSession(runtime, context,
+								  hasOption(argc, argv, "--engine-report"));
 		} catch (const std::exception &exception) {
 			std::cerr << "[" APP_NAME "] fatal: " << exception.what()
 					  << std::endl;

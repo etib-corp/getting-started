@@ -22,6 +22,7 @@
 
 #include "scenes/HomeScene.hpp"
 
+#include <cstdlib>
 #include <string>
 
 #include <guillaume/theme.hpp>
@@ -31,6 +32,7 @@
 #include <utility/graphic/pose.hpp>
 
 #include "AppContext.hpp"
+#include "scenes/gallery/GalleryPages.hpp"
 
 namespace app::scenes
 {
@@ -40,8 +42,70 @@ namespace app::scenes
 	using guillaume::SchemeColorRole;
 	using utility::graphic::PoseF;
 
+	namespace
+	{
+		/**
+		 * @brief Open the gallery page named by GETTING_STARTED_PAGE.
+		 *
+		 * `GETTING_STARTED_PAGE=6 ./build/bin/getting_started` starts on page
+		 * 6 of the gallery (1 to 11, see scenes/gallery/GalleryPages.hpp).
+		 * Only on the first entry of the home scene, so the Home buttons work
+		 * normally afterwards.
+		 * @param home The home scene.
+		 */
+		void openRequestedPage(HomeScene &home)
+		{
+			static bool done  = false;
+			const char *value = std::getenv("GETTING_STARTED_PAGE");
+
+			if (done || value == nullptr) {
+				return;
+			}
+			done = true;
+			switch (std::atoi(value)) {
+				case 1:
+					home.goToScene<gallery::ButtonsPage>();
+					break;
+				case 2:
+					home.goToScene<gallery::SelectionPage>();
+					break;
+				case 3:
+					home.goToScene<gallery::TextPage>();
+					break;
+				case 4:
+					home.goToScene<gallery::ContainersPage>();
+					break;
+				case 5:
+					home.goToScene<gallery::ListsPage>();
+					break;
+				case 6:
+					home.goToScene<gallery::FeedbackPage>();
+					break;
+				case 7:
+					home.goToScene<gallery::NavigationPage>();
+					break;
+				case 8:
+					home.goToScene<gallery::DrawerPage>();
+					break;
+				case 9:
+					home.goToScene<gallery::MeshPage>();
+					break;
+				case 10:
+					home.goToScene<gallery::ThemePage>();
+					break;
+				case 11:
+					home.goToScene<gallery::StoragePage>();
+					break;
+				default:
+					break;
+			}
+		}
+	}	 // namespace
+
 	void HomeScene::onEnter(void)
 	{
+		openRequestedPage(*this);
+
 		auto &registry = getComponentRegistry();
 
 		// The root of the scene: a column. guillaume places root entities in
@@ -81,7 +145,28 @@ namespace app::scenes
 			entities::Button::Color::Filled, entities::Button::Shape::Round,
 			entities::Button::Size::Small, false);
 
-		_page->setEntities({ title, subtitle, _status, button });
+		// Scene transitions: each button leaves this scene for a page of the
+		// widget gallery (src/scenes/gallery/). The switch happens at the end
+		// of the frame: onExit() here, then onEnter() there.
+		auto gallery = buttonBuilder.makeIconButton(
+			_page, "Widget gallery", "widgets",
+			guillaume::components::Glyph::Style::Outlined,
+			[this]() {
+				goToScene<gallery::ButtonsPage>();
+			},
+			entities::Button::Color::Tonal, entities::Button::Shape::Round,
+			entities::Button::Size::Small, false);
+		auto themes = buttonBuilder.makeIconButton(
+			_page, "Theme and storage", "palette",
+			guillaume::components::Glyph::Style::Outlined,
+			[this]() {
+				goToScene<gallery::ThemePage>();
+			},
+			entities::Button::Color::Outlined, entities::Button::Shape::Round,
+			entities::Button::Size::Small, false);
+
+		_page->setEntities(
+			{ title, subtitle, _status, button, gallery, themes });
 
 		// Let the host loop update the status line while this scene is shown.
 		context().showStatus = [this](const std::string &status) {

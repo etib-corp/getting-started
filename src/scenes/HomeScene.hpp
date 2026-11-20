@@ -34,10 +34,11 @@ namespace app::scenes
 	/**
 	 * @brief The scene shown at start-up.
 	 *
-	 * A card with a title, a line of text written by the Python script and a
-	 * button. Copy this class to add a scene, then list the new class in the
-	 * app::Application alias in src/Application.hpp and switch to it
-	 * with goToScene<OtherScene>().
+	 * A card with a title, a line of text written by the Python script, a
+	 * button counted by the script and two buttons opening the widget
+	 * gallery (src/scenes/gallery/). Copy this class to add a scene, then list
+	 * the new class in the app::Application alias in src/Application.hpp and
+	 * switch to it with goToScene<OtherScene>().
 	 */
 	class HomeScene: public guillaume::Scene
 	{

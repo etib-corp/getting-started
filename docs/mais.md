@@ -96,6 +96,12 @@ In the sample, the button increments `clicks`, the script reads it in
 `on_update` and writes `status`, and the host shows that text in the window.
 That is the full round trip: widget, host, Python, host, widget.
 
+The rest of the runtime's API (typed return values, introspection, plain
+arguments, structured errors, failure policies in isolation, thread affinity,
+restart) is shown by the scripting tour: `platforms/desktop/ScriptingTour.cpp`
+calls `scripts/features.py`, one block per feature, and
+`./build/bin/getting_started --scripting-tour` runs it without a window.
+
 ## Where the code lives
 
 | File | Role |
@@ -106,6 +112,8 @@ That is the full round trip: widget, host, Python, host, widget.
 | `src/scripting/Scripting.hpp` | The adapter's functions, declared without pybind11. |
 | `src/scripting/Scripting.cpp` | The only pybind11 code: the `host` module and the arguments. |
 | `scripts/app.py` | The hooks the host calls. |
+| `platforms/desktop/ScriptingTour.cpp` | The tour of the runtime, run with `--scripting-tour`. |
+| `scripts/features.py` | The functions the tour calls. |
 | `tests/ScriptingTest.cpp` | Checks each binding with `tests/scripts/fixture.py`. |
 
 ## Version

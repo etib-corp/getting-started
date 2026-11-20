@@ -61,6 +61,11 @@ engine's job. In this repository that engine is evan.
   `on_update()` and writes `context.status`; the host calls the callback
   registered in `HomeScene::onEnter()` (`context().showStatus`) to update the
   status line.
+- Two more buttons of `HomeScene` call `goToScene<...>()` to open the
+  widget gallery: eleven scenes under `src/scenes/gallery/`, one file per
+  family of widgets, plus the theme (colour schemes, tokens, accessibility)
+  and the two storages. The table is in the
+  [README](../README.md#guillaume-the-widget-gallery).
 - `HomeScene::onExit()` clears the callback, the entity registry and the
   cached widget pointers, which is the pattern to copy when adding a scene.
 - Scenes are created by guillaume with the arguments of the `Scene`
@@ -73,6 +78,9 @@ engine's job. In this repository that engine is evan.
 | --- | --- |
 | `src/scenes/HomeScene.hpp` | The start-up scene, its widgets and its lifecycle overrides. |
 | `src/scenes/HomeScene.cpp` | Builds the column, the texts and the button; registers `showStatus`. |
+| `src/scenes/gallery/GalleryPages.hpp` | The gallery pages and the table of what each one shows. |
+| `src/scenes/gallery/Page.cpp` | The column, rows and navigation every page shares. |
+| `src/scenes/gallery/*Page.cpp` | One page each: the code that creates the widgets. |
 | `src/Application.hpp` | Lists the scenes in `guillaume::Application`. |
 | `platforms/desktop/main.cpp`, `platforms/android/app/cpp/main.cpp` | Construct the application and run `routine()`. |
 | `src/AppContext.hpp` | The state a scene and the host share. |

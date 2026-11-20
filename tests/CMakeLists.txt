@@ -23,6 +23,19 @@ add_test(NAME scripting.bindings
         ${CMAKE_CURRENT_SOURCE_DIR}/scripts fixture
 )
 
+# The tour of the mais runtime (platforms/desktop/ScriptingTour.cpp with
+# scripts/features.py): one check per feature, without a window. It runs the
+# application itself, from its runtime directory, where the scripts are
+# copied.
+add_test(NAME scripting.tour
+    COMMAND ${APP_NAME} --scripting-tour
+    WORKING_DIRECTORY $<TARGET_FILE_DIR:${APP_NAME}>
+)
+set_tests_properties(scripting.tour PROPERTIES
+    PASS_REGULAR_EXPRESSION "all checks passed"
+    TIMEOUT 120
+)
+
 # Opens the window, draws 120 frames and exits. Off by default because it
 # needs a display and a Vulkan driver: -DAPP_ENABLE_GPU_TESTS=ON.
 if(APP_ENABLE_GPU_TESTS)
