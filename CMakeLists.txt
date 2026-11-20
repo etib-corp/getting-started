@@ -45,6 +45,7 @@ add_subdirectory(src)
 
 add_executable(${APP_NAME}
     platforms/desktop/main.cpp
+    platforms/desktop/ScriptingTour.cpp
 )
 
 target_compile_definitions(${APP_NAME}

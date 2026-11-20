@@ -21,14 +21,21 @@ import host
 
 
 def configure(settings):
-    """Propose the window settings, before the window exists.
+    """Propose the window and engine settings, before the window exists.
 
     The host validates the proposal and falls back to its defaults when a
-    value is out of range. A headset has no window: the proposal is ignored.
+    value is out of range. A headset has no window and paces its frames
+    itself: the proposal is ignored there.
     """
     settings.window_title = "Getting started"
     settings.width = 1280
     settings.height = 800
+
+    # Engine settings, applied by the desktop host when it creates evan's
+    # engine (platforms/desktop/main.cpp, runSession).
+    settings.target_fps = 0  # 0: paced by the display; 30 caps at 30 fps
+    settings.msaa_samples = 1  # anti-aliasing: 1 (off), 2 or 4
+    settings.camera_controls = True  # W/A/S/D, Q/E and right-button drag
 
 
 def on_start(context):

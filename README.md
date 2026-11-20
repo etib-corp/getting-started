@@ -17,6 +17,10 @@ Clone it, build it, and you get a window with a few widgets and a Python
 script driving one of them. Then replace the scene and the script with your
 own.
 
+The application also shows each library at work, with the code next to the
+feature: a widget gallery, a tour of the scripting runtime and the engine
+settings a script can propose. See [Feature tour](#feature-tour).
+
 ## Prerequisites
 
 - CMake 3.28 or newer and a C++20 compiler
@@ -65,13 +69,16 @@ src/                      code shared by every platform
   AppContext.hpp          state shared by the frame loop and the scenes
   Frame.hpp               what every host does around a frame
   scenes/HomeScene.cpp    the start-up scene: build your UI here
+  scenes/gallery/         the widget gallery: one scene per widget family
   scripting/Services.hpp  the state the hosts fill and Python can see
   scripting/Scripting.*   the Python bindings
 platforms/
   desktop/main.cpp        the desktop host: start-up order and frame loop
+  desktop/ScriptingTour.* the tour of the scripting runtime
   android/                the Gradle project for Meta headsets
 docs/                     one page per library: what it does and where we use it
 scripts/app.py            the Python hooks
+scripts/features.py       the Python side of the scripting tour
 assets/                   your models, images and textures
 tests/                    tests that run without a window
 tools/                    formatting and Linux set-up scripts
@@ -108,6 +115,82 @@ with the Python packaged in the APK. Two differences: the proposal of step 2
 is validated but not used (there is no window), and a script that fails to
 start does not stop the application: the error goes to `adb logcat` and the
 host writes the status line itself.
+
+## Feature tour
+
+Each feature of the libraries has code in this repository that uses it, and a
+way to see it run.
+
+### guillaume: the widget gallery
+
+The `Widget gallery` and `Theme and storage` buttons of the start-up scene
+open eleven pages, one scene and one source file each, under
+`src/scenes/gallery/`:
+
+| Page | File | What it shows |
+| --- | --- | --- |
+| 1 | `ButtonsPage.cpp` | `Button`, `IconButton`, floating action buttons, FAB menu, `SegmentedButton` |
+| 2 | `SelectionPage.cpp` | `Checkbox`, `RadioButton`, `RadioGroup`, `Switch`, `Chip` |
+| 3 | `TextPage.cpp` | `Text` (type scale), `Icon`, `Image`, `TextField`, `Search` |
+| 4 | `ContainersPage.cpp` | `Surface` (elevation), `Card` |
+| 5 | `ListsPage.cpp` | `Divider`, `Badge`, `List` |
+| 6 | `FeedbackPage.cpp` | `ProgressIndicator`, `LoadingIndicator`, `Snackbar`, `Dialog`, `Menu`, `Tooltip` |
+| 7 | `NavigationPage.cpp` | `AppBar`, `NavigationBar` |
+| 8 | `DrawerPage.cpp` | `NavigationDrawer` |
+| 9 | `MeshPage.cpp` | `Mesh`: a 3D model in the layout |
+| 10 | `ThemePage.cpp` | colour schemes, a theme token changed at run time, accessibility |
+| 11 | `StoragePage.cpp` | `LocalStorage` (kept after a restart) and `SessionStorage` |
+
+`Page.cpp` holds what the pages share: the column, the rows (nested views)
+and the Previous / Home / Next buttons, which are scene transitions. Every
+interaction prints a `[gallery]` line in the terminal. To start on a page:
+
+```sh
+GETTING_STARTED_PAGE=6 ./build/bin/getting_started
+```
+
+Pages 1 to 9 follow guillaume's own
+[widget gallery](https://github.com/etib-corp/guillaume/tree/main/examples/evan).
+
+### maïs: the scripting tour
+
+```sh
+./build/bin/getting_started --scripting-tour
+```
+
+runs `platforms/desktop/ScriptingTour.cpp` instead of the application, without
+a window. It calls the functions of `scripts/features.py` and prints one
+`[tour]` line per check: lifecycle and its misuse, search paths, module
+loading, introspection, arguments, typed return values, native arguments,
+error reports with the Python traceback and its frames, the three failure
+policies, call duration, a host command, thread affinity and restart. The
+`scripting.tour` test runs it.
+
+The hooks of the application itself (`configure`, `on_start`, `on_update`,
+`on_shutdown`) are in `scripts/app.py` and called from
+`platforms/desktop/main.cpp`.
+
+### evan: engine settings and report
+
+`configure(settings)` in `scripts/app.py` also proposes three engine settings,
+validated like the window size and applied in `runSession()`
+(`platforms/desktop/main.cpp`):
+
+| Setting | Effect | evan API |
+| --- | --- | --- |
+| `target_fps` | Frame rate limit; 0 leaves the pacing to the display. | `Engine::setTargetFps()` |
+| `msaa_samples` | Anti-aliasing: 1 (off), 2 or 4 samples. | `RenderSettings::msaaSamples` |
+| `camera_controls` | W/A/S/D, Q/E, arrow keys and right-button drag move the view. | `Engine::setShouldCaptureViewportInput()` |
+
+```sh
+./build/bin/getting_started --engine-report
+```
+
+prints, after 120 frames, what the engine reports about itself
+(`reportEngine()` in `platforms/desktop/main.cpp`): frame time, frame rate
+limit, batching switches, last error, statistics window and AR capability.
+evan's own switches are environment variables, for example `EVAN_STATS=1`,
+`EVAN_PRESENT_MODE=immediate` or `EVAN_MSAA=4`.
 
 ## Common tasks
 
@@ -233,6 +316,7 @@ See [platforms/android/README.md](platforms/android/README.md) for details.
 | --- | --- |
 | `scripting.app_script` | `scripts/app.py` loads, proposes valid settings and survives a few frames. |
 | `scripting.bindings` | Each binding of the `host` module, with `tests/scripts/fixture.py`. |
+| `scripting.tour` | The scripting tour: every check of `--scripting-tour` passes. |
 | `app.smoke` | The window opens, 120 frames are drawn, the application exits. |
 
 `app.smoke` needs a display and a Vulkan driver, so it is off by default:

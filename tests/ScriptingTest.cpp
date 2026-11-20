@@ -89,6 +89,12 @@ namespace
 		settings.windowTitle.clear();
 		expect(app::scripting::validate(settings).size() == 2,
 			   "an empty title is rejected too");
+
+		settings.targetFps	 = 1000.0;
+		settings.msaaSamples = 3;
+		expect(app::scripting::validate(settings).size() == 4,
+			   "a frame rate limit and a sample count out of range are "
+			   "rejected too");
 	}
 }	 // namespace
 
@@ -156,6 +162,10 @@ int main(int argc, char **argv)
 			expect(services.settings.width == 640
 					   && services.settings.height == 480,
 				   "configure writes width and height");
+			expect(services.settings.targetFps == 30.0
+					   && services.settings.msaaSamples == 4
+					   && !services.settings.cameraControls,
+				   "configure writes the engine settings");
 			expect(services.frame.status == "frame 2, 2 clicks",
 				   "on_update reads index and clicks and writes status");
 			expect(services.quitRequested,

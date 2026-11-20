@@ -42,12 +42,24 @@ namespace app::scripting
 	 *
 	 * The host validates the proposal with validate() before the window is
 	 * created; an invalid proposal is replaced by the defaults. A headset has
-	 * no window: the Android host validates the proposal and does not use it.
+	 * no window and paces and samples its frames itself: the Android host
+	 * validates the proposal and does not use it.
 	 */
 	struct Settings {
 		std::string windowTitle = "Getting started";	///< Window title
 		int width				= 1280;	   ///< Window width, in pixels
 		int height				= 800;	   ///< Window height, in pixels
+
+		/// Frame rate limit of the engine; 0 leaves the pacing to the
+		/// display (vsync).
+		double targetFps = 0.0;
+
+		/// Samples per pixel of the engine's anti-aliasing: 1 (off), 2 or 4.
+		int msaaSamples = 1;
+
+		/// Whether the engine moves the view with W/A/S/D, Q/E, the arrow
+		/// keys and a right-button drag.
+		bool cameraControls = true;
 	};
 
 	/**
@@ -98,6 +110,15 @@ namespace app::scripting
 		if (settings.height < 240 || settings.height > 4320) {
 			problems.emplace_back("height must be between 240 and 4320 (got "
 								  + std::to_string(settings.height) + ")");
+		}
+		if (settings.targetFps < 0.0 || settings.targetFps > 240.0) {
+			problems.emplace_back("target_fps must be between 0 and 240 (got "
+								  + std::to_string(settings.targetFps) + ")");
+		}
+		if (settings.msaaSamples != 1 && settings.msaaSamples != 2
+			&& settings.msaaSamples != 4) {
+			problems.emplace_back("msaa_samples must be 1, 2 or 4 (got "
+								  + std::to_string(settings.msaaSamples) + ")");
 		}
 		return problems;
 	}

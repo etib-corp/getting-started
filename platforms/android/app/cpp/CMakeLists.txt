@@ -102,6 +102,9 @@ add_custom_target(${APP_NAME}_engine_assets
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${APP_ENGINE_FONTS_DIR}
         ${APP_ENGINE_ASSETS_OUTPUT_DIR}/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${APP_ENGINE_MODELS_DIR}
+        ${APP_ENGINE_ASSETS_OUTPUT_DIR}/models
     COMMAND ${CMAKE_COMMAND} -E make_directory
         ${APP_ENGINE_ASSETS_OUTPUT_DIR}/${APP_SYMBOLS_FONT_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

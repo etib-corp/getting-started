@@ -62,7 +62,11 @@ namespace app::scripting
 				py::class_<Settings>(host, "Settings")
 					.def_readwrite("window_title", &Settings::windowTitle)
 					.def_readwrite("width", &Settings::width)
-					.def_readwrite("height", &Settings::height);
+					.def_readwrite("height", &Settings::height)
+					.def_readwrite("target_fps", &Settings::targetFps)
+					.def_readwrite("msaa_samples", &Settings::msaaSamples)
+					.def_readwrite("camera_controls",
+								   &Settings::cameraControls);
 
 				py::class_<FrameContext>(host, "FrameContext")
 					.def_readonly("index", &FrameContext::index)

@@ -9,6 +9,7 @@
 #     shaders/    evan's SPIR-V shaders          (from the pinned libraries)
 #     fonts/      Roboto and Material Symbols    (from the pinned libraries)
 #     textures/   the engine's default texture   (from the pinned libraries)
+#     models/     the gallery's sample model     (from the pinned libraries)
 #     scripts/    this repository's scripts/
 #     ...         this repository's assets/
 #
@@ -31,6 +32,9 @@ add_custom_command(TARGET ${APP_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${APP_ENGINE_FONTS_DIR}
         ${APP_RUNTIME_DIR}/fonts
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${APP_ENGINE_MODELS_DIR}
+        ${APP_RUNTIME_DIR}/models
     COMMAND ${CMAKE_COMMAND} -E make_directory
         ${APP_RUNTIME_DIR}/${APP_SYMBOLS_FONT_DIR}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

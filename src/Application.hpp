@@ -25,6 +25,7 @@
 #include <guillaume/application.hpp>
 
 #include "scenes/HomeScene.hpp"
+#include "scenes/gallery/GalleryPages.hpp"
 
 /**
  * @file
@@ -40,6 +41,12 @@ namespace app
 	 * desktop and Android hosts both create this type, so a scene added here
 	 * exists on every platform.
 	 */
-	using Application = guillaume::Application<scenes::HomeScene>;
+	using Application = guillaume::Application<
+		scenes::HomeScene, scenes::gallery::ButtonsPage,
+		scenes::gallery::SelectionPage, scenes::gallery::TextPage,
+		scenes::gallery::ContainersPage, scenes::gallery::ListsPage,
+		scenes::gallery::FeedbackPage, scenes::gallery::NavigationPage,
+		scenes::gallery::DrawerPage, scenes::gallery::MeshPage,
+		scenes::gallery::ThemePage, scenes::gallery::StoragePage>;
 
 }	 // namespace app
