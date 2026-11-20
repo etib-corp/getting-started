@@ -48,8 +48,8 @@ def on_update(context):
     )
 
     # Commands are requests: the host closes the window after this frame.
-    # if context.clicks >= 10:
-    #     host.request_quit()
+    if context.clicks >= 10:
+        host.request_quit()
 
 
 def on_shutdown(context):
